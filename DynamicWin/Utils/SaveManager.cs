@@ -1,91 +1,73 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace DynamicWin.Utils
+namespace DynamicWin.Utils;
+
+internal static class SaveManager
 {
-    internal class SaveManager
+    private static readonly Dictionary<string, object> _settingsDictionary = new();
+
+    public static string SavePath { get; } = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), 
+        "DynamicWin");
+    
+    private static string _fileName = "Settings.json";
+
+    public static void LoadSettings()
     {
-        private static Dictionary<string, object> data = new Dictionary<string, object>();
-        public static Dictionary<string, object> SaveData { get { return data; } set => data = value; }
+        System.Diagnostics.Debug.WriteLine(SavePath);
 
-        public static string SavePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "DynamicWin");
-        static string fileName = "Settings.json";
+        Directory.CreateDirectory(SavePath);
+        var fullPath = Path.Combine(SavePath, _fileName);
 
-        static string cachedJsonSave = "";
-
-        public static void LoadData()
+        if (!File.Exists(fullPath))
         {
-            System.Diagnostics.Debug.WriteLine(SavePath);
-
-            if (!Directory.Exists(SavePath)) Directory.CreateDirectory(SavePath);
-
-            var fullPath = Path.Combine(SavePath, fileName);
-
-            if (!File.Exists(fullPath))
-            {
-                var fs = File.Create(fullPath);
-                fs.Close();
-                File.WriteAllText(fullPath, JsonConvert.SerializeObject(new Dictionary<string, object>()));
-            }
-
-            var json = File.ReadAllText(fullPath);
-            cachedJsonSave = json;
-
-            data = JsonConvert.DeserializeObject<Dictionary<string, object>>(json);
+            File.WriteAllText(fullPath, JsonConvert.SerializeObject(new Dictionary<string, object>()));
+            return;
         }
 
-        public static void SaveAll()
+        var json = File.ReadAllText(fullPath);
+
+        var deserializeSettings = JsonConvert.DeserializeObject<Dictionary<string, object>>(json)
+            ?? throw new InvalidOperationException("Failed to deserialize settings from JSON.");
+        
+        foreach (var setting in deserializeSettings)
+            _settingsDictionary.TryAdd(setting.Key, setting.Value);
+    }
+
+    public static void SaveAll()
+    {
+        Directory.CreateDirectory(SavePath);
+
+        var fullPath = Path.Combine(SavePath, _fileName);
+        var json = JsonConvert.SerializeObject(_settingsDictionary, Formatting.Indented);
+
+        File.WriteAllText(fullPath, json);
+    }
+
+    public static void AddOrUpdate(string key, object value)
+    {
+        if (Contains(key))
         {
-            if (!Directory.Exists(SavePath)) Directory.CreateDirectory(SavePath);
-
-            var fullPath = Path.Combine(SavePath, fileName);
-            var json = JsonConvert.SerializeObject(data, Formatting.Indented);
-
-            if (!File.Exists(fullPath))
-                File.Create(fullPath);
-
-            File.WriteAllText(fullPath, json);
+            _settingsDictionary[key] = value;
+            return;
         }
+        
+        _settingsDictionary.Add(key, value);
+    }
 
-        public static void Add(string key, object value)
-        {
-            if (!Contains(key))
-                data.Add(key, value);
-            else
-                data[key] = value;
-        }
+    public static void Remove(string key)
+    {
+        if (Contains(key)) _settingsDictionary.Remove(key);
+    }
 
-        public static void Remove(string key)
-        {
-            if (Contains(key))
-                data.Remove(key);
-        }
+    public static object? GetOrDefault(string key)
+    {
+        return Contains(key) ? _settingsDictionary[key] : null;
+    }
 
-        public static object Get(string key)
-        {
-            if (Contains(key))
-                return data[key];
-            else
-                return default;
-        }
-
-        public static T Get<T>(string key)
-        {
-            if (Contains(key))
-                return (T)JsonConvert.DeserializeObject<T>(cachedJsonSave);
-            else
-                return default(T);
-        }
-
-        public static bool Contains(string key)
-        {
-            return data.ContainsKey(key);
-        }
+    public static bool Contains(string key)
+    {
+        return _settingsDictionary.ContainsKey(key);
     }
 }

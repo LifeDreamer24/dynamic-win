@@ -1,175 +1,198 @@
 ﻿using DynamicWin.Main;
 using DynamicWin.UI.Menu;
 using DynamicWin.Utils;
+using FftSharp;
 using SkiaSharp;
 
-namespace DynamicWin.UI.UIElements
+namespace DynamicWin.UI.UIElements;
+
+public class IslandObject : UIObject
 {
-    public class IslandObject : UIObject
-    {
-        public float topOffset = 15f;
+    private readonly float[] _secondOrderValuesExpand = [2.5f, 0.6f, 0.1f];
+    private readonly float[] _secondOrderValuesContract = [3f, 0.9f, 0.1f];
+    
+    private float topOffset { get; set; } = 15f;
 
-        public SecondOrder scaleSecondOrder;
+    public SecondOrder scaleSecondOrder { get; }
+    
 
-        public float[] secondOrderValuesExpand = [2.5f, 0.6f, 0.1f];
-        public float[] secondOrderValuesContract = [3f, 0.9f, 0.1f];
-
-        public bool hidden = false;
+    public bool hidden { get; set; } = false;
         
-        public Vec2 currSize;
+    public Vec2 currSize;
 
-        public enum IslandMode { Island, Notch };
-        public IslandMode mode = Settings.IslandMode;
+    public enum IslandMode { Island, Notch };
+    public IslandMode mode = Settings.IslandMode;
 
-        float dropShadowStrength = 0f;
-        float dropShadowSize = 0f;
+    float dropShadowStrength = 0f;
+    float dropShadowSize = 0f;
 
-        Col borderCol = Col.Transparent;
+    Color _borderColor = Utils.Color.Transparent;
 
-        public IslandObject() : base(null, Vec2.zero, new Vec2(250, 50), UIAlignment.TopCenter)
+    public IslandObject() : base(null, Vec2.zero, new Vec2(250, 50))
+    {
+        currSize = Size;
+
+        Anchor = new Vec2(0.5f, 0f);
+
+        roundRadius = 35f;
+
+        LocalPosition = new Vec2(0, topOffset);
+        PaddingTop = topOffset;
+
+        scaleSecondOrder = new SecondOrder(Size, _secondOrderValuesExpand[0], _secondOrderValuesExpand[1], _secondOrderValuesExpand[2]);
+        expandInteractionRect = 20;
+
+        maskInToIsland = false;
+        
+        
+
+        MouseEnter += UIObject_MouseEnter;
+        MouseLeave += UIObject_MouseLeave;
+        IsRendering += UIObject_IsRendering;
+    }
+    
+    private void UIObject_MouseEnter(object? sender, EventArgs e)
+    {
+        scaleSecondOrder.SetValues(_secondOrderValuesExpand[0], _secondOrderValuesExpand[1], _secondOrderValuesExpand[2]);
+        currSize = MenuManager.Instance.ActiveMenu.IslandSizeBig();
+    }
+    
+    private void UIObject_MouseLeave(object? sender, EventArgs e)
+    {
+        scaleSecondOrder.SetValues(_secondOrderValuesContract[0], _secondOrderValuesContract[1], _secondOrderValuesContract[2]);
+        currSize = MenuManager.Instance.ActiveMenu.IslandSize();
+    }
+
+    private void UIObject_IsRendering(object? sender, IsRenderingEventArgs e)
+    {
+        if (!hidden)
         {
-            currSize = Size;
-
-            Anchor = new Vec2(0.5f, 0f);
-
-            roundRadius = 35f;
-
-            LocalPosition = new Vec2(0, topOffset);
-
-            scaleSecondOrder = new SecondOrder(Size, secondOrderValuesExpand[0], secondOrderValuesExpand[1], secondOrderValuesExpand[2]);
-            expandInteractionRect = 20;
-
-            maskInToIsland = false;
-        }
-
-        public override void Update(float deltaTime)
-        {
-            base.Update(deltaTime);
-
-            if (!hidden)
+            var newPosY =  Mathf.Lerp(LocalPosition.Y, topOffset, 15f * e.DeltaTime);
+            Size = scaleSecondOrder.Update(e.DeltaTime, currSize);
+            
+            MainForm.Instance.Opacity = 1f;
+            if (PaddingTop == newPosY)
             {
-                if (IsHovering)
-                {
-                    scaleSecondOrder.SetValues(secondOrderValuesExpand[0], secondOrderValuesExpand[1], secondOrderValuesExpand[2]);
-                    currSize = MenuManager.Instance.ActiveMenu.IslandSizeBig();
-                }
-                else
-                {
-                    scaleSecondOrder.SetValues(secondOrderValuesContract[0], secondOrderValuesContract[1], secondOrderValuesContract[2]);
-                    currSize = MenuManager.Instance.ActiveMenu.IslandSize();
-                }
-
-                Size = scaleSecondOrder.Update(deltaTime, currSize);
-                //Size = Vec2.lerp(Size, currSize, deltaTime * 15f);
-
-                LocalPosition.Y = Mathf.Lerp(LocalPosition.Y, topOffset, 15f * deltaTime);
+                return;
             }
-            else
-            {
-                scaleSecondOrder.SetValues(secondOrderValuesContract[0], secondOrderValuesContract[1], secondOrderValuesContract[2]);
-
-                Size = scaleSecondOrder.Update(deltaTime, new Vec2(500, 15));
-                //Size = Vec2.lerp(Size, new Vec2(500, 10), deltaTime * 15f);
-
-                LocalPosition.Y = Mathf.Lerp(LocalPosition.Y, -Size.Y / 1.5f, 25f * deltaTime);
-            }
-
-            MainForm.Instance.Opacity = hidden ? 0.85f : 1f;
-
-            mode = Settings.IslandMode;
-
-            topOffset = Mathf.Lerp(topOffset, (mode == IslandMode.Island) ? 7.5f : -2.5f, 15f * deltaTime);
-
-            dropShadowStrength = Mathf.Lerp(dropShadowStrength, IsHovering ? 0.75f : 0.25f, 10f * deltaTime);
-            dropShadowSize = Mathf.Lerp(dropShadowSize, IsHovering ? 35f : 7.5f, 10f * deltaTime);
-
-            borderCol = Col.Lerp(borderCol, MenuManager.Instance.ActiveMenu.IslandBorderColor(), 10f  * deltaTime);
+            
+            PaddingTop = newPosY;
+            
         }
-
-        public override void Draw(SKCanvas canvas)
+        else
         {
-            var paint = GetPaint();
-            paint.IsAntialias = Settings.AntiAliasing;
-
-            paint.Color = Theme.IslandBackground.Value();
-
-            if (!hidden)
+            var newPosY = Mathf.Lerp(LocalPosition.Y, -Size.Y / 1.5f, 25f * e.DeltaTime);
+            
+            scaleSecondOrder.SetValues(_secondOrderValuesContract[0], _secondOrderValuesContract[1], _secondOrderValuesContract[2]);
+            Size = scaleSecondOrder.Update(e.DeltaTime, new Vec2(500, 15));
+            MainForm.Instance.Opacity = 0.85f;
+            
+            if (PaddingTop == newPosY)
             {
-                paint.ImageFilter = SKImageFilter.CreateDropShadow(1, 1, dropShadowSize, dropShadowSize, new Col(0, 0, 0).Override(a: dropShadowStrength).Value());
+                return;
+            }
+            
+            PaddingTop = newPosY;
+        }
+
+        mode = Settings.IslandMode;
+
+        topOffset = Mathf.Lerp(topOffset, (mode == IslandMode.Island) ? 7.5f : -2.5f, 15f * e.DeltaTime);
+
+        dropShadowStrength = Mathf.Lerp(dropShadowStrength, IsHovering ? 0.75f : 0.25f, 10f * e.DeltaTime);
+        dropShadowSize = Mathf.Lerp(dropShadowSize, IsHovering ? 35f : 7.5f, 10f * e.DeltaTime);
+
+        _borderColor = Utils.Color.Lerp(_borderColor, MenuManager.Instance.ActiveMenu.IslandBorderColor(), 10f  * e.DeltaTime);
+    }
+
+    private static void Show(float deltaTime)
+    {
+        
+    }
+
+    public override void Draw(SKCanvas canvas)
+    {
+        var paint = GetPaint();
+        paint.IsAntialias = Settings.AntiAliasing;
+
+        paint.Color = Theme.IslandBackground.Value();
+
+        if (!hidden)
+        {
+            paint.ImageFilter = SKImageFilter.CreateDropShadow(1, 1, dropShadowSize, dropShadowSize, new Color(0, 0, 0).Override(a: dropShadowStrength).Value());
+        }
+
+        // Border
+        var rect = GetRect();
+        var paint2 = GetPaint();
+        rect.Inflate(2.5f / 2, 2.5f / 2);
+        paint2.Color = _borderColor.Override(a: _borderColor.a * 0.35f).Value();
+        paint2.IsStroke = true;
+        paint2.StrokeWidth = 2.5f;
+
+        canvas.DrawRoundRect(rect, paint2);
+
+        paint.ImageFilter = null;
+
+        if (mode == IslandMode.Notch && !hidden)
+        {
+            var path = new SKPath();
+
+            var awidth = (float)(Math.Max(0f, Size.Y / 45));
+            var aheight = (float)(Math.Max(Size.Y / 45, 15)) + (LocalPosition.Y - topOffset);
+            var y = 0;
+
+            { // Left notch curve
+
+                var x = Position.X - awidth;
+
+                path.MoveTo(x - awidth, y);
+                path.CubicTo(
+                    x + 0, y,
+                    x + awidth, y,
+                    x + awidth, y + aheight);
+                path.LineTo(x + awidth, y);
+                path.LineTo(x + 0, y);
             }
 
-            // Border
-            var rect = GetRect();
-            var paint2 = GetPaint();
-            rect.Inflate(2.5f / 2, 2.5f / 2);
-            paint2.Color = borderCol.Override(a: borderCol.a * 0.35f).Value();
-            paint2.IsStroke = true;
-            paint2.StrokeWidth = 2.5f;
+            { // Right notch curve
 
-            canvas.DrawRoundRect(rect, paint2);
+                var x = Position.X + Size.X + awidth;
 
-            paint.ImageFilter = null;
-
-            if (mode == IslandMode.Notch && !hidden)
-            {
-                var path = new SKPath();
-
-                var awidth = (float)(Math.Max(0f, Size.Y / 45));
-                var aheight = (float)(Math.Max(Size.Y / 45, 15)) + (LocalPosition.Y - topOffset);
-                var y = 0;
-
-                { // Left notch curve
-
-                    var x = Position.X - awidth;
-
-                    path.MoveTo(x - awidth, y);
-                    path.CubicTo(
-                        x + 0, y,
-                        x + awidth, y,
-                        x + awidth, y + aheight);
-                    path.LineTo(x + awidth, y);
-                    path.LineTo(x + 0, y);
-                }
-
-                { // Right notch curve
-
-                    var x = Position.X + Size.X + awidth;
-
-                    path.MoveTo(x + awidth, y);
-                    path.CubicTo(
-                        x - 0, y,
-                        x - awidth, y,
-                        x - awidth, y + aheight);
-                    path.LineTo(x - awidth, y);
-                    path.LineTo(x - 0, y);
-                }
-
-                var r = SKRect.Create(Position.X, 0, Size.X, (Position.Y - topOffset) + topOffset + Size.Y / 2);
-                path.AddRect(r);
-
-                canvas.DrawPath(path, paint);
+                path.MoveTo(x + awidth, y);
+                path.CubicTo(
+                    x - 0, y,
+                    x - awidth, y,
+                    x - awidth, y + aheight);
+                path.LineTo(x - awidth, y);
+                path.LineTo(x - 0, y);
             }
 
-            canvas.DrawRoundRect(GetRect(), paint);
+            var r = SKRect.Create(Position.X, 0, Size.X, (Position.Y - topOffset) + topOffset + Size.Y / 2);
+            path.AddRect(r);
+
+            canvas.DrawPath(path, paint);
         }
 
-        public override SKRoundRect GetInteractionRect()
-        {
-            var rect = SKRect.Create(Position.X, Position.Y, Size.X, Size.Y);
+        canvas.DrawRoundRect(GetRect(), paint);
+    }
 
-            if(IsHovering)
-                rect.Inflate(expandInteractionRect + 5, expandInteractionRect + 5);
+    public override SKRoundRect GetInteractionRect()
+    {
+        var rect = SKRect.Create(Position.X, Position.Y, Size.X, Size.Y);
 
-            rect.Inflate(expandInteractionRect, expandInteractionRect);
-            var r = new SKRoundRect(rect, roundRadius);
+        if(IsHovering)
+            rect.Inflate(expandInteractionRect + 5, expandInteractionRect + 5);
 
-            return r;
-        }
+        rect.Inflate(expandInteractionRect, expandInteractionRect);
+        var r = new SKRoundRect(rect, roundRadius);
 
-        public override SKRoundRect GetRect()
-        {
-            var rect = base.GetRect();
-            return rect;
-        }
+        return r;
+    }
+
+    public override SKRoundRect GetRect()
+    {
+        var rect = base.GetRect();
+        return rect;
     }
 }

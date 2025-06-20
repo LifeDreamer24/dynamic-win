@@ -1,39 +1,33 @@
 ﻿using DynamicWin.Main;
 using DynamicWin.UI.UIElements;
 using DynamicWin.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace DynamicWin.UI.Menu
+namespace DynamicWin.UI.Menu;
+
+public class BaseMenu : IDisposable
 {
-    public class BaseMenu : IDisposable
+    private List<UIObject> uiObjects = new List<UIObject>();
+
+    public List<UIObject> UiObjects { get { return uiObjects; } }
+
+    public BaseMenu()
     {
-        private List<UIObject> uiObjects = new List<UIObject>();
+        uiObjects = InitializeMenu(RendererMain.Instance.MainIsland);
+    }
 
-        public List<UIObject> UiObjects { get { return uiObjects; } }
+    public virtual Vec2 IslandSize() { return new Vec2(200, 45); }
+    public virtual Vec2 IslandSizeBig() { return IslandSize(); }
 
-        public BaseMenu()
-        {
-            uiObjects = InitializeMenu(RendererMain.Instance.MainIsland);
-        }
+    public virtual Color IslandBorderColor() { return Color.Transparent; }
 
-        public virtual Vec2 IslandSize() { return new Vec2(200, 45); }
-        public virtual Vec2 IslandSizeBig() { return IslandSize(); }
+    public virtual List<UIObject> InitializeMenu(IslandObject island) { return new List<UIObject>(); }
 
-        public virtual Col IslandBorderColor() { return Col.Transparent; }
+    public virtual void Update() { }
 
-        public virtual List<UIObject> InitializeMenu(IslandObject island) { return new List<UIObject>(); }
+    public virtual void OnDeload() { }
 
-        public virtual void Update() { }
-
-        public virtual void OnDeload() { }
-
-        public void Dispose()
-        {
-            uiObjects.Clear();
-        }
+    public void Dispose()
+    {
+        uiObjects.Clear();
     }
 }

@@ -1,73 +1,67 @@
 ﻿using DynamicWin.UI.UIElements;
 using DynamicWin.UI.Widgets.Big;
 using DynamicWin.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace DynamicWin.UI.Widgets.Small
+namespace DynamicWin.UI.Widgets.Small;
+
+class RegisterActiveTimerWidget : IRegisterableWidget
 {
-    class RegisterActiveTimerWidget : IRegisterableWidget
+    public bool IsSmallWidget => true;
+
+    public string WidgetName => "Active Timer Display";
+
+    public WidgetBase CreateWidgetInstance(UIObject? parent, Vec2 position, UIAlignment alignment = UIAlignment.TopCenter)
     {
-        public bool IsSmallWidget => true;
+        return new ActiveTimerWidget(parent, position, alignment);
+    }
+}
 
-        public string WidgetName => "Active Timer Display";
+public class ActiveTimerWidget : SmallWidgetBase
+{
+    DWText timeText;
 
-        public WidgetBase CreateWidgetInstance(UIObject? parent, Vec2 position, UIAlignment alignment = UIAlignment.TopCenter)
-        {
-            return new ActiveTimerWidget(parent, position, alignment);
-        }
+    public ActiveTimerWidget(UIObject? parent, Vec2 position, UIAlignment alignment = UIAlignment.TopCenter) : base(parent, position, alignment)
+    {
+        timeText = new DWText(this, GetTime(), Vec2.zero, UIAlignment.Center);
+        timeText.TextSize = 14;
+        AddLocalObject(timeText);
     }
 
-    public class ActiveTimerWidget : SmallWidgetBase
+    public override void Update(float deltaTime)
     {
-        DWText timeText;
+        base.Update(deltaTime);
 
-        public ActiveTimerWidget(UIObject? parent, Vec2 position, UIAlignment alignment = UIAlignment.TopCenter) : base(parent, position, alignment)
+        timeText.SilentSetText(IsTimerActive() ? GetTime() : " ");
+    }
+
+    bool IsTimerActive()
+    {
+        if(TimerWidget.instance != null)
         {
-            timeText = new DWText(this, GetTime(), Vec2.zero, UIAlignment.Center);
-            timeText.TextSize = 14;
-            AddLocalObject(timeText);
+            return TimerWidget.instance.IsTimerRunning;
         }
 
-        public override void Update(float deltaTime)
-        {
-            base.Update(deltaTime);
+        return false;
+    }
 
-            timeText.SilentSetText(IsTimerActive() ? GetTime() : " ");
+    string GetTime()
+    {
+        if (TimerWidget.instance != null)
+        {
+            TimeSpan t = TimeSpan.FromSeconds(TimerWidget.instance.CurrentTime);
+            string formatedTime = string.Format("{0:D2}:{1:D2}:{2:D2}",
+                t.Hours,
+                t.Minutes,
+                t.Seconds);
+
+            return formatedTime;            
         }
 
-        bool IsTimerActive()
-        {
-            if(TimerWidget.instance != null)
-            {
-                return TimerWidget.instance.IsTimerRunning;
-            }
+        return " ";
+    }
 
-            return false;
-        }
-
-        string GetTime()
-        {
-            if (TimerWidget.instance != null)
-            {
-                TimeSpan t = TimeSpan.FromSeconds(TimerWidget.instance.CurrentTime);
-                string formatedTime = string.Format("{0:D2}:{1:D2}:{2:D2}",
-                                t.Hours,
-                                t.Minutes,
-                                t.Seconds);
-
-                return formatedTime;            
-            }
-
-            return " ";
-        }
-
-        protected override float GetWidgetWidth()
-        {
-            return IsTimerActive() ? 60 : 0;
-        }
+    protected override float GetWidgetWidth()
+    {
+        return IsTimerActive() ? 60 : 0;
     }
 }

@@ -1,235 +1,226 @@
-﻿using DynamicWin.Main;
-using DynamicWin.Utils;
+﻿using DynamicWin.Utils;
 using SkiaSharp;
-using System;
-using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
 using ThumbnailGenerator;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace DynamicWin.UI.UIElements.Custom
+namespace DynamicWin.UI.UIElements.Custom;
+
+internal class TrayFile : UIObject
 {
-    internal class TrayFile : UIObject
+    string file;
+    Bitmap thumbnail;
+
+    public string FileName { get => file; }
+
+    DWImage fileIconImage;
+    DWText fileTitle;
+
+    bool isSelected = false;
+    public bool IsSelected { get => isSelected; }
+
+    public static TrayFile lastSelected;
+
+    Tray tray;
+
+    public TrayFile(UIObject? parent, string file, Vec2 position, Tray tray, UIAlignment alignment = UIAlignment.TopCenter):
+        base(parent, position, new Vec2(60, 75), alignment)
     {
-        string file;
-        Bitmap thumbnail;
+        this.file = file;
+        SilentSetActive(false);
 
-        public string FileName { get => file; }
+        this.tray = tray;
 
-        DWImage fileIconImage;
-        DWText fileTitle;
+        Color = GetColor(Theme.Primary.Override(a: 0.45f));
+        roundRadius = 7.5f;
 
-        bool isSelected = false;
-        public bool IsSelected { get => isSelected; }
-
-        public static TrayFile lastSelected;
-
-        Tray tray;
-
-        public TrayFile(UIObject? parent, string file, Vec2 position, Tray tray, UIAlignment alignment = UIAlignment.TopCenter):
-            base(parent, position, new Vec2(60, 75), alignment)
+        fileTitle = new DWText(this, DWText.Truncate(Path.GetFileNameWithoutExtension(file), 8) + Path.GetExtension(file), new Vec2(0, -10), UIAlignment.BottomCenter)
         {
-            this.file = file;
-            SilentSetActive(false);
+            Color = Theme.TextSecond,
+            TextSize = 11
+        };
 
-            this.tray = tray;
+        AddLocalObject(fileTitle);
 
-            Color = GetColor(Theme.Primary.Override(a: 0.45f));
-            roundRadius = 7.5f;
+        var modifyDate = File.GetLastWriteTimeUtc(file);
+        var modifyString = modifyDate.ToString("yy/MM/dd HH:mm");
 
-            fileTitle = new DWText(this, DWText.Truncate(Path.GetFileNameWithoutExtension(file), 8) + Path.GetExtension(file), new Vec2(0, -10), UIAlignment.BottomCenter)
-            {
-                Color = Theme.TextSecond,
-                TextSize = 11
-            };
+        var fileSize = Mathf.GetFileSizeString(file);
 
-            AddLocalObject(fileTitle);
-
-            var modifyDate = File.GetLastWriteTimeUtc(file);
-            var modifyString = modifyDate.ToString("yy/MM/dd HH:mm");
-
-            var fileSize = Mathf.GetFileSizeString(file);
-
-            AddLocalObject(new DWText(this, modifyString, new Vec2(0, 7.5f), UIAlignment.BottomCenter)
-            {
-                Color = Theme.TextThird,
-                TextSize = 10f
-            });
-
-            AddLocalObject(new DWText(this, fileSize, new Vec2(0, 17.5f), UIAlignment.BottomCenter)
-            {
-                Color = Theme.TextThird,
-                TextSize = 10f
-            });
-
-            fileIconImage = new DWImage(this, Resources.Res.FileIcon, new Vec2(0, 30), new Vec2(50, 50), UIAlignment.TopCenter);
-            fileIconImage.allowIconThemeColor = false;
-            fileIconImage.roundRadius = 5f;
-            fileIconImage.maskOwnRect = true;
-
-            AddLocalObject(fileIconImage);
-
-            RefreshIcon();
-        }
-
-        public void RefreshIcon()
+        AddLocalObject(new DWText(this, modifyString, new Vec2(0, 7.5f), UIAlignment.BottomCenter)
         {
-            new Thread(() =>
-            {
-                Thread.CurrentThread.IsBackground = true;
+            Color = Theme.TextThird,
+            TextSize = 10f
+        });
 
-                try
-                {
-                    int THUMB_SIZE = 64;
-                    thumbnail = WindowsThumbnailProvider.GetThumbnail(
-                       file, THUMB_SIZE, THUMB_SIZE, ThumbnailOptions.None);
-                }
-                catch (System.Runtime.InteropServices.COMException e)
-                {
-                    System.Diagnostics.Debug.WriteLine("Could not load icon.");
-
-                    new Thread(() =>
-                    {
-                        try
-                        {
-                            Thread.Sleep(1500);
-                        }
-                        catch (ThreadInterruptedException e)
-                        {
-                            return;
-                        }
-
-                        RefreshIcon();
-                    }).Start();
-
-                }
-                catch (FileNotFoundException fnfE)
-                {
-                    return;
-                }
-                finally
-                {
-                    SKBitmap bMap = null;
-                    if (thumbnail != null) bMap = thumbnail.ToSKBitmap();
-                    else bMap = Resources.Res.FileIcon;
-
-                    fileIconImage.Image = bMap;
-
-                    if (thumbnail != null)
-                        thumbnail.Dispose();
-                }
-
-                SetActive(true);
-            }).Start();
-        }
-
-        float cycle = 0f;
-        float speed = 5f;
-
-        public override void Update(float deltaTime)
+        AddLocalObject(new DWText(this, fileSize, new Vec2(0, 17.5f), UIAlignment.BottomCenter)
         {
-            base.Update(deltaTime);
+            Color = Theme.TextThird,
+            TextSize = 10f
+        });
 
-            //Size.X = fileTitle.TextBounds.X;
+        fileIconImage = new DWImage(this, Resources.FileResources.FileIcon, new Vec2(0, 30), new Vec2(50, 50), UIAlignment.TopCenter);
+        fileIconImage.allowIconThemeColor = false;
+        fileIconImage.roundRadius = 5f;
+        fileIconImage.maskOwnRect = true;
 
-            cycle += deltaTime * speed;
-            Color = Theme.Primary.Override(a: Mathf.Remap((float)Math.Sin(cycle), -1, 1, 0.35f, 0.45f));
-        }
+        AddLocalObject(fileIconImage);
 
-        public override void OnMouseDown()
+        RefreshIcon();
+    }
+
+    public void RefreshIcon()
+    {
+        new Thread(() =>
         {
-            if (!isSelected) isSelected = true;
-            else return;
+            Thread.CurrentThread.IsBackground = true;
 
-            wasSelected = false;
-
-            if (isSelected)
+            try
             {
-                if (KeyHandler.keyDown.Contains(Keys.LShiftKey) || KeyHandler.keyDown.Contains(Keys.RShiftKey))
-                {
-                    int indexLast = 0;
-                    if (TrayFile.lastSelected != null)
-                        indexLast = tray.fileObjects.IndexOf(TrayFile.lastSelected);
-
-                    lastSelected = this;
-                    var newIndex = tray.fileObjects.IndexOf(this);
-
-                    if (newIndex == indexLast) return;
-
-                    bool upwards = indexLast < newIndex;
-
-                    int start = upwards ? indexLast : newIndex;
-                    int end = upwards ? newIndex : indexLast;
-
-                    for (int i = start; i < end; i++)
-                    {
-                        tray.fileObjects[i].isSelected = true;
-                    }
-                }
-                else
-                {
-                    lastSelected = this;
-                }
+                int THUMB_SIZE = 64;
+                thumbnail = WindowsThumbnailProvider.GetThumbnail(
+                    file, THUMB_SIZE, THUMB_SIZE, ThumbnailOptions.None);
             }
-        }
-
-        bool wasSelected = false;
-
-        public override void OnMouseUp()
-        {
-            if (isSelected && wasSelected)
+            catch (System.Runtime.InteropServices.COMException e)
             {
-                isSelected = false;
+                System.Diagnostics.Debug.WriteLine("Could not load icon.");
+
+                new Thread(() =>
+                {
+                    try
+                    {
+                        Thread.Sleep(1500);
+                    }
+                    catch (ThreadInterruptedException e)
+                    {
+                        return;
+                    }
+
+                    RefreshIcon();
+                }).Start();
+
+            }
+            catch (FileNotFoundException fnfE)
+            {
+                return;
+            }
+            finally
+            {
+                SKBitmap bMap = null;
+                if (thumbnail != null) bMap = thumbnail.ToSKBitmap();
+                else bMap = Resources.FileResources.FileIcon;
+
+                fileIconImage.Image = bMap;
+
+                if (thumbnail != null)
+                    thumbnail.Dispose();
+            }
+
+            SetActive(true);
+        }).Start();
+    }
+
+    float cycle = 0f;
+    float speed = 5f;
+
+    public override void Update(float deltaTime)
+    {
+        base.Update(deltaTime);
+
+        //Size.X = fileTitle.TextBounds.X;
+
+        cycle += deltaTime * speed;
+        Color = Theme.Primary.Override(a: Mathf.Remap((float)Math.Sin(cycle), -1, 1, 0.35f, 0.45f));
+    }
+
+    public override void OnMouseDown()
+    {
+        if (!isSelected) isSelected = true;
+        else return;
+
+        wasSelected = false;
+
+        if (isSelected)
+        {
+            if (KeyboardListener.keyDown.Contains(Keys.LShiftKey) || KeyboardListener.keyDown.Contains(Keys.RShiftKey))
+            {
+                int indexLast = 0;
+                if (TrayFile.lastSelected != null)
+                    indexLast = tray.fileObjects.IndexOf(TrayFile.lastSelected);
+
+                lastSelected = this;
+                var newIndex = tray.fileObjects.IndexOf(this);
+
+                if (newIndex == indexLast) return;
+
+                bool upwards = indexLast < newIndex;
+
+                int start = upwards ? indexLast : newIndex;
+                int end = upwards ? newIndex : indexLast;
+
+                for (int i = start; i < end; i++)
+                {
+                    tray.fileObjects[i].isSelected = true;
+                }
             }
             else
             {
-                wasSelected = true;
-                return;
+                lastSelected = this;
             }
         }
+    }
 
-        public override void OnGlobalMouseUp()
+    bool wasSelected = false;
+
+    public override void OnMouseUp()
+    {
+        if (isSelected && wasSelected)
         {
-            if (!IsHovering)
-            {
-                if(!(KeyHandler.keyDown.Contains(Keys.LControlKey) || KeyHandler.keyDown.Contains(Keys.RControlKey)
-                    || KeyHandler.keyDown.Contains(Keys.LShiftKey) || KeyHandler.keyDown.Contains(Keys.RShiftKey)))
-                    isSelected = false;
-            }
+            isSelected = false;
         }
-
-        public override void Draw(SKCanvas canvas)
+        else
         {
-            var paint = GetPaint();
+            wasSelected = true;
+            return;
+        }
+    }
 
-            if (isSelected)
-            {
-                //var rect = SKRect.Create(Position.X - 15, Position.Y, Size.X + 30, Size.Y);
-                //var rRect = new SKRoundRect(rect, roundRadius);
+    public override void OnGlobalMouseUp()
+    {
+        if (!IsHovering)
+        {
+            if(!(KeyboardListener.keyDown.Contains(Keys.LControlKey) || KeyboardListener.keyDown.Contains(Keys.RControlKey)
+                                                               || KeyboardListener.keyDown.Contains(Keys.LShiftKey) || KeyboardListener.keyDown.Contains(Keys.RShiftKey)))
+                isSelected = false;
+        }
+    }
 
-                var textR = SKRect.Create(fileTitle.Position.X, fileTitle.Position.Y + 1.5f,
-                    fileTitle.Size.X, fileTitle.Size.Y);
-                textR.Inflate(-2.5f, 0);
-                var roundTextRect = new SKRoundRect(textR, 5f);
+    public override void Draw(SKCanvas canvas)
+    {
+        var paint = GetPaint();
 
-                var thumbnailR = SKRect.Create(fileIconImage.Position.X, fileIconImage.Position.Y,
-                    fileIconImage.Size.X, fileIconImage.Size.Y + 5);
-                var roundThumbnailRect = new SKRoundRect(thumbnailR, 2.5f);
-                roundThumbnailRect.Inflate(5f, 5f);
+        if (isSelected)
+        {
+            //var rect = SKRect.Create(Position.X - 15, Position.Y, Size.X + 30, Size.Y);
+            //var rRect = new SKRoundRect(rect, roundRadius);
 
-                var path = new SKPath();
-                path.AddRoundRect(roundTextRect);
-                path.AddRoundRect(roundThumbnailRect);
+            var textR = SKRect.Create(fileTitle.Position.X, fileTitle.Position.Y + 1.5f,
+                fileTitle.Size.X, fileTitle.Size.Y);
+            textR.Inflate(-2.5f, 0);
+            var roundTextRect = new SKRoundRect(textR, 5f);
 
-                //canvas.DrawRoundRect(roundTextRect, paint);
-                canvas.DrawPath(path, paint);
-            }
+            var thumbnailR = SKRect.Create(fileIconImage.Position.X, fileIconImage.Position.Y,
+                fileIconImage.Size.X, fileIconImage.Size.Y + 5);
+            var roundThumbnailRect = new SKRoundRect(thumbnailR, 2.5f);
+            roundThumbnailRect.Inflate(5f, 5f);
+
+            var path = new SKPath();
+            path.AddRoundRect(roundTextRect);
+            path.AddRoundRect(roundThumbnailRect);
+
+            //canvas.DrawRoundRect(roundTextRect, paint);
+            canvas.DrawPath(path, paint);
         }
     }
 }

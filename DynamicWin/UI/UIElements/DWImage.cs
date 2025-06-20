@@ -1,69 +1,61 @@
-﻿using DynamicWin.Resources;
-using DynamicWin.Utils;
+﻿using DynamicWin.Utils;
 using SkiaSharp;
-using System;
-using System.Collections.Generic;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace DynamicWin.UI.UIElements
+namespace DynamicWin.UI.UIElements;
+
+public class DWImage : UIObject
 {
-    public class DWImage : UIObject
+    private SKBitmap image;
+
+    public SKBitmap Image { get { return image; } set => image = value; }
+
+    public bool maskOwnRect = false;
+    public bool allowIconThemeColor = true;
+
+    public DWImage(UIObject? parent, SKBitmap sprite, Vec2 position, Vec2 size, UIAlignment alignment = UIAlignment.TopCenter, bool maskOwnRect = false) : base(parent, position, size, alignment)
     {
-        private SKBitmap image;
+        image = sprite;
+        this.maskOwnRect = maskOwnRect;
 
-        public SKBitmap Image { get { return image; } set => image = value; }
+        Color = Theme.IconColor;
+    }
 
-        public bool maskOwnRect = false;
-        public bool allowIconThemeColor = true;
+    public override void Draw(SKCanvas canvas)
+    {
+        var paint = GetPaint();
 
-        public DWImage(UIObject? parent, SKBitmap sprite, Vec2 position, Vec2 size, UIAlignment alignment = UIAlignment.TopCenter, bool maskOwnRect = false) : base(parent, position, size, alignment)
+        if (image == null) return;
+
+        if (allowIconThemeColor)
         {
-            image = sprite;
-            this.maskOwnRect = maskOwnRect;
+            var imageFilter = SKImageFilter.CreateBlendMode(SKBlendMode.DstIn,
+                SKImageFilter.CreateColorFilter(SKColorFilter.CreateBlendMode(Color.Value(), SKBlendMode.Multiply)));
 
-            Color = Theme.IconColor;
-        }
-
-        public override void Draw(SKCanvas canvas)
-        {
-            var paint = GetPaint();
-
-            if (image == null) return;
-
-            if (allowIconThemeColor)
+            if (GetBlur() != 0f)
             {
-                var imageFilter = SKImageFilter.CreateBlendMode(SKBlendMode.DstIn,
-                        SKImageFilter.CreateColorFilter(SKColorFilter.CreateBlendMode(Color.Value(), SKBlendMode.Multiply)));
+                var blur = SKImageFilter.CreateBlur(GetBlur(), GetBlur());
 
-                if (GetBlur() != 0f)
+                if (blur != null && imageFilter != null)
                 {
-                    var blur = SKImageFilter.CreateBlur(GetBlur(), GetBlur());
-
-                    if (blur != null && imageFilter != null)
-                    {
-                        var composedFilter = SKImageFilter.CreateCompose(blur, imageFilter);
-                        paint.ImageFilter = composedFilter;
-                    }
+                    var composedFilter = SKImageFilter.CreateCompose(blur, imageFilter);
+                    paint.ImageFilter = composedFilter;
                 }
-                else
-                    paint.ImageFilter = imageFilter;
-            }
-
-            if (maskOwnRect)
-            {
-                int save = canvas.Save();
-                canvas.ClipRoundRect(GetRect(), antialias: true);
-
-                canvas.DrawBitmap(image, SKRect.Create(Position.X, Position.Y, Size.X, Size.Y), paint);
-                canvas.RestoreToCount(save);
             }
             else
-            {
-                canvas.DrawBitmap(image, SKRect.Create(Position.X, Position.Y, Size.X, Size.Y), paint);
-            }
+                paint.ImageFilter = imageFilter;
+        }
+
+        if (maskOwnRect)
+        {
+            int save = canvas.Save();
+            canvas.ClipRoundRect(GetRect(), antialias: true);
+
+            canvas.DrawBitmap(image, SKRect.Create(Position.X, Position.Y, Size.X, Size.Y), paint);
+            canvas.RestoreToCount(save);
+        }
+        else
+        {
+            canvas.DrawBitmap(image, SKRect.Create(Position.X, Position.Y, Size.X, Size.Y), paint);
         }
     }
 }

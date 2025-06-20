@@ -1,23 +1,16 @@
-﻿using DynamicWin.Main;
-using DynamicWin.UI.UIElements;
+﻿using DynamicWin.UI.UIElements;
 using DynamicWin.Utils;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace DynamicWin.UI.Menu.Menus
+namespace DynamicWin.UI.Menu.Menus;
+
+public class OverlayTest : BaseMenu
 {
-    public class OverlayTest : BaseMenu
+    public override List<UIObject> InitializeMenu(IslandObject island)
     {
-        public override List<UIObject> InitializeMenu(IslandObject island)
-        {
-            var objects = base.InitializeMenu(island);
+        var objects = base.InitializeMenu(island);
 
-            objects.Add(new DWText(island, "Overlay", Vec2.zero, UIAlignment.Center));
+        objects.Add(new DWText(island, "Overlay", Vec2.zero, UIAlignment.Center));
 
-            return objects;
-        }
+        return objects;
     }
 }

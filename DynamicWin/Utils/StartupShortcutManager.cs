@@ -1,25 +1,24 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using IWshRuntimeLibrary;
 
-namespace DynamicWin.Utils
+namespace DynamicWin.Utils;
+
+public class StartupShortcutManager
 {
-
-    public class StartupShortcutManager
+    private static string GetStartupFolderPath()
     {
-        private static string GetStartupFolderPath()
-        {
-            return Environment.GetFolderPath(Environment.SpecialFolder.Startup);
-        }
+        return Environment.GetFolderPath(Environment.SpecialFolder.Startup);
+    }
 
-        private static string GetShortcutPath(string shortcutName)
-        {
-            return Path.Combine(GetStartupFolderPath(), $"{shortcutName}.lnk");
-        }
+    private static string GetShortcutPath(string shortcutName)
+    {
+        return Path.Combine(GetStartupFolderPath(), $"{shortcutName}.lnk");
+    }
 
-        public static void CreateShortcut()
+    public static void TryCreateShortcut()
+    {
+        try
         {
             string appPath = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName);
             string shortcutPath = GetShortcutPath(appPath);
@@ -41,8 +40,15 @@ namespace DynamicWin.Utils
 
             Console.WriteLine("Shortcut created successfully.");
         }
+        catch (Exception e)
+        {
+            
+        }
+    }
 
-        public static bool RemoveShortcut()
+    public static void TryRemoveShortcut()
+    {
+        try
         {
             string appPath = Path.GetFileName(Process.GetCurrentProcess().MainModule.FileName);
             string shortcutPath = GetShortcutPath(appPath);
@@ -51,12 +57,14 @@ namespace DynamicWin.Utils
             {
                 System.IO.File.Delete(shortcutPath);
                 Console.WriteLine("Shortcut removed successfully.");
-                return true;
+                return;
             }
 
             Console.WriteLine("Shortcut does not exist.");
-            return false;
+        }
+        catch (Exception e)
+        {
+            
         }
     }
-
 }

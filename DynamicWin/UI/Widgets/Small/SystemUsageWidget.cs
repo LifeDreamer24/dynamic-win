@@ -1,65 +1,57 @@
 ﻿using DynamicWin.UI.UIElements;
-using DynamicWin.UI.Widgets.Big;
 using DynamicWin.Utils;
 using LibreHardwareMonitor.Hardware;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Threading;
 
-namespace DynamicWin.UI.Widgets.Small
+namespace DynamicWin.UI.Widgets.Small;
+
+class RegisterSystemUsageWidget : IRegisterableWidget
 {
-    class RegisterSystemUsageWidget : IRegisterableWidget
+    public bool IsSmallWidget => true;
+
+    public string WidgetName => "System Usage Display";
+
+    public WidgetBase CreateWidgetInstance(UIObject? parent, Vec2 position, UIAlignment alignment = UIAlignment.TopCenter)
     {
-        public bool IsSmallWidget => true;
+        return new SystemUsageWidget(parent, position, alignment);
+    }
+}
 
-        public string WidgetName => "System Usage Display";
+public class SystemUsageWidget : SmallWidgetBase
+{
+    DWText text;
 
-        public WidgetBase CreateWidgetInstance(UIObject? parent, Vec2 position, UIAlignment alignment = UIAlignment.TopCenter)
+    Computer computer;
+
+    public SystemUsageWidget(UIObject? parent, Vec2 position, UIAlignment alignment = UIAlignment.TopCenter) : base(parent, position, alignment)
+    {
+        text = new DWText(this, GetUsage(), Vec2.zero, UIAlignment.Center);
+        text.TextSize = 12;
+        text.Color = Theme.TextSecond;
+        AddLocalObject(text);
+    }
+
+    public override void Update(float deltaTime)
+    {
+        base.Update(deltaTime);
+
+        updateCycle += deltaTime;
+
+        if(updateCycle > 1.5f)
         {
-            return new SystemUsageWidget(parent, position, alignment);
+            text.SilentSetText(GetUsage());
+            updateCycle = 0f;
         }
     }
 
-    public class SystemUsageWidget : SmallWidgetBase
+    float updateCycle = 0f;
+
+    string GetUsage()
     {
-        DWText text;
+        return HardwareMonitor.usageString;
+    }
 
-        Computer computer;
-
-        public SystemUsageWidget(UIObject? parent, Vec2 position, UIAlignment alignment = UIAlignment.TopCenter) : base(parent, position, alignment)
-        {
-            text = new DWText(this, GetUsage(), Vec2.zero, UIAlignment.Center);
-            text.TextSize = 12;
-            text.Color = Theme.TextSecond;
-            AddLocalObject(text);
-        }
-
-        public override void Update(float deltaTime)
-        {
-            base.Update(deltaTime);
-
-            updateCycle += deltaTime;
-
-            if(updateCycle > 1.5f)
-            {
-                text.SilentSetText(GetUsage());
-                updateCycle = 0f;
-            }
-        }
-
-        float updateCycle = 0f;
-
-        string GetUsage()
-        {
-            return HardwareMonitor.usageString;
-        }
-
-        protected override float GetWidgetWidth()
-        {
-            return Math.Max(225f, text != null ? text.TextBounds.X : 10 - 10);
-        }
+    protected override float GetWidgetWidth()
+    {
+        return Math.Max(225f, text != null ? text.TextBounds.X : 10 - 10);
     }
 }
