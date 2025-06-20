@@ -174,7 +174,7 @@ public class UsedDevicesWidget : SmallWidgetBase
 
     bool isMicrophoneIndicatorShowing = false;
 
-    public override void DrawWidget(SKCanvas canvas)
+    protected override void DrawWidget(SKCanvas canvas)
     {
         var paint = GetPaint();
 

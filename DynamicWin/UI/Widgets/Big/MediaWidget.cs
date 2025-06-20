@@ -193,7 +193,7 @@ public class MediaWidget : WidgetBase
     bool isSpotifyAvaliable = false;
     Color _spotifyColor = Utils.Color.FromHex("#1cb351");
 
-    public override void DrawWidget(SKCanvas canvas)
+    protected override void DrawWidget(SKCanvas canvas)
     {
         var paint = GetPaint();
         paint.Color = GetColor(Theme.WidgetBackground).Value();

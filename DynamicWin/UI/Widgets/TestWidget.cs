@@ -9,7 +9,7 @@ public class TestWidget : WidgetBase
     {
     }
 
-    public override void DrawWidget(SKCanvas canvas)
+    protected override void DrawWidget(SKCanvas canvas)
     {
         base.DrawWidget(canvas);
 

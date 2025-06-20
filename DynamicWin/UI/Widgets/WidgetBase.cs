@@ -7,12 +7,9 @@ namespace DynamicWin.UI.Widgets;
 
 public class WidgetBase : UIObject
 {
-    public bool isEditMode = false;
-
-    protected bool isSmallWidget = false;
-    public bool IsSmallWidget { get { return isSmallWidget; } }
-
-    //DWText widgetName;
+    private float _hoverProgress;
+    
+    public bool IsEditMode { get; set; }
 
     public WidgetBase(UIObject? parent, Vec2 position, UIAlignment alignment = UIAlignment.TopCenter) : base(parent, position, Vec2.zero, alignment)
     {
@@ -22,12 +19,6 @@ public class WidgetBase : UIObject
         objs.ForEach(obj => AddLocalObject(obj));
 
         roundRadius = 15f;
-
-        /*widgetName = new DWText(this, GetWidgetName(), Vec2.zero, UIAlignment.Center)
-        {
-            Font = Res.InterBold,
-            textSize = 20
-        };*/
     }
 
     public Vec2 GetWidgetSize() { return new Vec2(GetWidgetWidth(), GetWidgetHeight()); }
@@ -46,9 +37,9 @@ public class WidgetBase : UIObject
 
     public override ContextMenu? GetContextMenu()
     {
-        if (!isEditMode) return null;
+        if (!IsEditMode) return null;
 
-        var ctx = new System.Windows.Controls.ContextMenu();
+        var ctx = new ContextMenu();
 
         MenuItem remove = new MenuItem() { Header = "Remove" };
         remove.Click += (x, y) => onEditRemoveWidget?.Invoke();
@@ -66,84 +57,55 @@ public class WidgetBase : UIObject
         return ctx;
     }
 
-    float hoverProgress = 0f;
-
     public override void Draw(SKCanvas canvas)
     {
         Size = GetWidgetSize();
 
-        hoverProgress = Mathf.Lerp(hoverProgress, IsHovering ? 1f : 0f, 10f * RendererMain.Instance.DeltaTime);
+        _hoverProgress = Mathf.Lerp(_hoverProgress, IsHovering ? 1f : 0f, 10f * RendererMain.Instance.DeltaTime);
 
-        if(hoverProgress > 0.025f)
+        if(_hoverProgress > 0.025f)
         {
-            var paint = GetPaint();
-            paint.ImageFilter = SKImageFilter.CreateDropShadowOnly(0, 0, hoverProgress * 10, hoverProgress * 10, Theme.WidgetBackground.Override(a: hoverProgress / 10).Value());
+            var paintOnHovering = GetPaint();
+            paintOnHovering.ImageFilter = SKImageFilter.CreateDropShadowOnly(
+                dx: 0, 
+                dy: 0, 
+                sigmaX: _hoverProgress * 10, 
+                sigmaY: _hoverProgress * 10, 
+                color: Theme.WidgetBackground.Override(a: _hoverProgress / 10).Value());
 
-            int ogC = canvas.Save();
+            canvas.Save();
 
             var p = Position + Size / 2;
-            canvas.Scale(1 + hoverProgress / 60, 1 + hoverProgress / 60, p.X, p.Y);
+            canvas.Scale(1 + _hoverProgress / 60, 1 + _hoverProgress / 60, p.X, p.Y);
 
-            int sc = canvas.Save();
+            var sc = canvas.Save();
             canvas.ClipRoundRect(GetRect(), SKClipOperation.Difference, antialias: true);
-            canvas.DrawRoundRect(GetRect(), paint);
+            canvas.DrawRoundRect(GetRect(), paintOnHovering);
             canvas.RestoreToCount(sc);
         }
-
-
-        /*if (!isEditMode || isSmallWidget)
-        {
-            drawLocalObjects = true; */
+        
         DrawWidget(canvas);
-        /*            }
-                    else
-                    {
-                        widgetName.blurAmount = GetBlur();
-                        widgetName.DrawCall(canvas);
-                        drawLocalObjects = false;
-                    }*/
 
+        if (!IsEditMode) return;
+        
+        var paint = GetPaint();
 
-        /*if (!IsSmallWidget)
-        {
-            var bPaint = GetPaint();
-            bPaint.ImageFilter = SKImageFilter.CreateBlur(100, 100);
-            bPaint.BlendMode = SKBlendMode.SrcOver;
-            bPaint.Color = Col.White.Override(a: 0.4f).Value();
+        paint.IsStroke = true;
+        paint.StrokeCap = SKStrokeCap.Round;
+        paint.StrokeJoin = SKStrokeJoin.Round;
+        paint.StrokeWidth = 2f;
 
-            int canvasSave = canvas.Save();
-            canvas.ClipRoundRect(GetRect(), antialias: true);
-            canvas.DrawCircle(RendererMain.CursorPosition.X + 12.5f, RendererMain.CursorPosition.Y + 20, 35, bPaint);
+        const float expand = 10;
+        var brect = SKRect.Create(Position.X - expand / 2, Position.Y - expand / 2, Size.X + expand, Size.Y + expand);
+        var broundRect = new SKRoundRect(brect, roundRadius);
 
-            canvas.RestoreToCount(canvasSave);
-        }*/
+        var noClip = canvas.Save();
 
-        if (isEditMode)
-        {
-            var paint = GetPaint();
+        paint.Color = SKColors.DimGray;
+        canvas.DrawRoundRect(broundRect, paint);
 
-            paint.IsStroke = true;
-            paint.StrokeCap = SKStrokeCap.Round;
-            paint.StrokeJoin = SKStrokeJoin.Round;
-            paint.StrokeWidth = 2f;
-
-            float expand = 10;
-            var brect = SKRect.Create(Position.X - expand / 2, Position.Y - expand / 2, Size.X + expand, Size.Y + expand);
-            var broundRect = new SKRoundRect(brect, roundRadius);
-
-            int noClip = canvas.Save();
-
-            //if(!RendererMain.Instance.MainIsland.IsHovering)
-            //    canvas.ClipRect(clipRect, SKClipOperation.Difference);
-
-            paint.Color = SKColors.DimGray;
-            canvas.DrawRoundRect(broundRect, paint);
-
-            canvas.RestoreToCount(noClip);
-        }
-
-        //canvas.RestoreToCount(ogC);
+        canvas.RestoreToCount(noClip);
     }
 
-    public virtual void DrawWidget(SKCanvas canvas) { }
+    protected virtual void DrawWidget(SKCanvas canvas) { }
 }

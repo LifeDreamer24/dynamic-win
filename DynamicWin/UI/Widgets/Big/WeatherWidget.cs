@@ -216,7 +216,7 @@ public class WeatherWidget : WidgetBase
             weatherTypeIcon.Image = Resources.FileResources.SevereWeatherWarning;
     }
 
-    public override void DrawWidget(SKCanvas canvas)
+    protected override void DrawWidget(SKCanvas canvas)
     {
         base.DrawWidget(canvas);
 

@@ -38,7 +38,7 @@ public class ShortcutsWidget : WidgetBase
             GetWidgetSize() / 2f, UIAlignment.BottomRight));
     }
 
-    public override void DrawWidget(SKCanvas canvas)
+    protected override void DrawWidget(SKCanvas canvas)
     {
         base.DrawWidget(canvas);
 

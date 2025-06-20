@@ -239,7 +239,7 @@ public class TimerWidget : WidgetBase
         timerText.SilentSetText(answer);
     }
 
-    public override void DrawWidget(SKCanvas canvas)
+    protected override void DrawWidget(SKCanvas canvas)
     {
         base.DrawWidget(canvas);
 

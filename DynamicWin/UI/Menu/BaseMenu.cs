@@ -6,9 +6,9 @@ namespace DynamicWin.UI.Menu;
 
 public class BaseMenu : IDisposable
 {
-    private List<UIObject> uiObjects = new List<UIObject>();
+    private List<UIObject> uiObjects;
 
-    public List<UIObject> UiObjects { get { return uiObjects; } }
+    public List<UIObject> UiObjects => uiObjects;
 
     public BaseMenu()
     {

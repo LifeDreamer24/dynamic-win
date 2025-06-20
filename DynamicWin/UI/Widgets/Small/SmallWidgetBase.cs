@@ -7,7 +7,6 @@ public class SmallWidgetBase : WidgetBase
     public SmallWidgetBase(UIObject? parent, Vec2 position, UIAlignment alignment = UIAlignment.TopCenter) : base(parent, position, alignment)
     {
         roundRadius = 5f;
-        isSmallWidget = true;
     }
 
     protected override float GetWidgetHeight() { return 15; }

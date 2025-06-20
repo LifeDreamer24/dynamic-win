@@ -689,7 +689,7 @@ internal class SmallWidgetAdder : UIObject
             var widget = smallWidgets[smallWidget.ToString()];
 
             var instance = (SmallWidgetBase)widget.CreateWidgetInstance(container, Vec2.zero, UIAlignment.Center);
-            instance.isEditMode = true;
+            instance.IsEditMode = true;
 
             instance.onEditRemoveWidget += () => {
                 Settings.smallWidgetsMiddle.Remove(smallWidget);
@@ -722,7 +722,7 @@ internal class SmallWidgetAdder : UIObject
             var widget = smallWidgets[smallWidget.ToString()];
 
             var instance = (SmallWidgetBase)widget.CreateWidgetInstance(container, Vec2.zero, UIAlignment.MiddleLeft);
-            instance.isEditMode = true;
+            instance.IsEditMode = true;
 
             instance.onEditRemoveWidget += () => {
                 Settings.smallWidgetsLeft.Remove(smallWidget);
@@ -755,7 +755,7 @@ internal class SmallWidgetAdder : UIObject
             var widget = smallWidgets[smallWidget.ToString()];
 
             var instance = (SmallWidgetBase)widget.CreateWidgetInstance(container, Vec2.zero, UIAlignment.MiddleRight);
-            instance.isEditMode = true;
+            instance.IsEditMode = true;
 
             instance.onEditRemoveWidget += () => {
                 Settings.smallWidgetsRight.Remove(smallWidget);
