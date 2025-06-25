@@ -1,10 +1,11 @@
-﻿using DynamicWin.Main;
-using DynamicWin.Resources;
-using DynamicWin.Utils;
-using NAudio.CoreAudioApi;
-using System.Diagnostics;
+﻿using DynamicWin.Resources;
 using System.Windows;
 using System.Windows.Forms;
+using DynamicWin.Interop;
+using DynamicWin.Rendering;
+using DynamicWin.Shortcuts;
+using DynamicWin.UI.Menu;
+using DynamicWin.UserSettings;
 using MessageBox = System.Windows.MessageBox;
 
 namespace DynamicWin;
@@ -45,9 +46,18 @@ public class App(
         KeyboardListener.Start();
         Settings.InitializeSettings();
         
+        var renderer = new DynamicWinRenderer();
+        
         var mainForm = new MainForm(
             title, style, state, resizeMode, topmost, 
-            allowsTransparency, showInTaskbar, theme, trayIcon);
+            allowsTransparency, showInTaskbar, theme, trayIcon,
+            renderer: renderer,
+            shortcuts: [
+                new ToggleIslandShortcut(DynamicWinRenderer.Instance.MainIsland),
+                new VolumeAdjustShortcut(PopupOptions.SaveData, MenuManager.Instance),
+                new MediaPreviousTrackShortcut(MenuManager.Instance),
+                new MediaNextTrackShortcut(MenuManager.Instance),
+            ]);
         
         mainForm.Show();
     }

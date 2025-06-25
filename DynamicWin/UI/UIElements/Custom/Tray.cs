@@ -1,11 +1,12 @@
-﻿using DynamicWin.Main;
-using DynamicWin.Utils;
-using SkiaSharp;
+﻿using SkiaSharp;
 using System.Collections.Specialized;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using DynamicWin.Rendering;
+using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin.UI.UIElements.Custom;
 
@@ -86,7 +87,7 @@ internal class Tray : UIObject
     {
         base.OnMouseDown();
 
-        mouseDownPos = new Vec2(RendererMain.CursorPosition.X, RendererMain.CursorPosition.Y);
+        mouseDownPos = new Vec2(DynamicWinRenderer.CursorPosition.X, DynamicWinRenderer.CursorPosition.Y);
         canDrag = true;
     }
 
@@ -108,7 +109,7 @@ internal class Tray : UIObject
 
         if (cachedTrayFiles == null) return;
 
-        mouseYLastSmooth = Mathf.Lerp(mouseYLastSmooth, 0, 10f * deltaTime);
+        mouseYLastSmooth = MathRendering.LinearInterpolation(mouseYLastSmooth, 0, 10f * deltaTime);
 
         var fileW = 60;
         var fileH = 100;
@@ -129,11 +130,11 @@ internal class Tray : UIObject
 
             if (!fileObject.IsEnabled) continue;
 
-            fileObject.LocalPosition.X = Mathf.Lerp(fileObject.LocalPosition.X,
+            fileObject.LocalPosition.X = MathRendering.LinearInterpolation(fileObject.LocalPosition.X,
                 (fileW + spacing) * (i % maxFilesInOneLine) + xAdd,
                 fileMovementSmoothing * deltaTime);
 
-            fileObject.LocalPosition.Y = Mathf.Lerp(fileObject.LocalPosition.Y,
+            fileObject.LocalPosition.Y = MathRendering.LinearInterpolation(fileObject.LocalPosition.Y,
                 (fileH * line) + yOffset,
                 fileMovementSmoothing * deltaTime);
 
@@ -145,8 +146,8 @@ internal class Tray : UIObject
 
         int lines = fileObjects.Count / (maxFilesInOneLine);
 
-        scrollFac = Mathf.Lerp(scrollFac, Mathf.Clamp(scrollFac, -scrollLimY, 0f), 25f * deltaTime);
-        yOffset = Mathf.Lerp(yOffset, scrollFac + mouseYLastSmooth, 50f * deltaTime);
+        scrollFac = MathRendering.LinearInterpolation(scrollFac, MathRendering.Clamp(scrollFac, -scrollLimY, 0f), 25f * deltaTime);
+        yOffset = MathRendering.LinearInterpolation(yOffset, scrollFac + mouseYLastSmooth, 50f * deltaTime);
 
         selectedFiles.Clear();
         fileObjects.ForEach((f) =>
@@ -160,7 +161,7 @@ internal class Tray : UIObject
             }
         });
 
-        if (!isDragging && canDrag && IsMouseDown && Vec2.Distance(RendererMain.CursorPosition, mouseDownPos) >= 25)
+        if (!isDragging && canDrag && IsMouseDown && Vec2.Distance(DynamicWinRenderer.CursorPosition, mouseDownPos) >= 25)
         {
             isDragging = true;
 
@@ -234,7 +235,7 @@ internal class Tray : UIObject
             paint.StrokeJoin = SKStrokeJoin.Round;
             paint.StrokeWidth = 2f;
 
-            paint.Color = GetColor(Theme.IslandBackground.Inverted().Override(a: 0.1f)).Value();
+            paint.Color = GetColor(Theme.IslandBackground.Inverted().Override(alpha: 0.1f)).Value();
 
             canvas.DrawRoundRect(placeRect, paint);
 

@@ -1,17 +1,17 @@
-﻿using DynamicWin.Resources;
-using DynamicWin.UI.Menu;
-using DynamicWin.UI.Menu.Menus;
-using DynamicWin.Utils;
-using System.Diagnostics;
+﻿using System.Diagnostics;
+using System.IO;
+using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using System.Windows.Input;
-using System.Windows.Interop;
-using System.Windows.Media;
-using DynamicWin.DllImports;
 using DynamicWin.Interop;
-using DynamicWin.WPFBinders;
+using DynamicWin.Rendering;
+using DynamicWin.Resources;
+using DynamicWin.Shortcuts;
+using DynamicWin.UI.Menu;
+using DynamicWin.UI.Menu.Menus;
+using DynamicWin.UserSettings;
 using DataFormats = System.Windows.DataFormats;
 using DataObject = System.Windows.DataObject;
 using DragAction = System.Windows.DragAction;
@@ -20,19 +20,20 @@ using DragEventArgs = System.Windows.DragEventArgs;
 using MessageBox = System.Windows.MessageBox;
 using QueryContinueDragEventArgs = System.Windows.QueryContinueDragEventArgs;
 
-namespace DynamicWin.Main;
+namespace DynamicWin;
 
-public partial class MainForm : Window
+public partial class MainForm
 {
     private readonly NotifyIcon _trayIcon;
-    private readonly TimeSpan _targetElapsedTime = TimeSpan.FromMilliseconds(16); // ~60 FPS
-    private DateTime _lastRenderTime;
     private readonly Theme _theme;
-    private RendererMain _rendererMain; 
+    private DynamicWinRenderer _dynamicWinRenderer; 
+    private readonly List<IShortcut> _shortcuts;
     
-    private bool _isLocalDrag = false;
+    private bool _isLocalDrag;
     
-    public static MainForm Instance { get; private set; }
+    public bool IsDragging { get; private set; }
+    
+    public static MainForm? Instance { get; private set; }
 
     public static Action<MouseWheelEventArgs>? OnScrollEvent { get; set; }
 
@@ -45,15 +46,22 @@ public partial class MainForm : Window
         bool allowsTransparency,
         bool showInTaskbar,
         Theme theme,
-        NotifyIcon trayIcon)
+        NotifyIcon trayIcon,
+        DynamicWinRenderer renderer,
+        IEnumerable<IShortcut> shortcuts)
     {
         InitializeComponent();
-
-        //CompositionTarget.Rendering += OnRendering;
-
         Instance = this;
+        
         _trayIcon = trayIcon;
         _theme = theme;
+        _shortcuts = shortcuts.ToList();
+        _dynamicWinRenderer = renderer;
+        
+        var parent = new Grid();
+        parent.Children.Add(_dynamicWinRenderer);
+
+        Content = parent;
         
         WindowStyle = style;
         WindowState = state;
@@ -64,10 +72,13 @@ public partial class MainForm : Window
         Title = title;
         
         Loaded += (_, _) => ExtendedWindowStyles.ChangeToToolWindow(this);
+        
+        KeyboardListener.OnKeyDown += (key, modifier) =>
+        {
+            _shortcuts.FirstOrDefault(shortcut => shortcut.Intended(key, modifier))?.Execute();
+        };
 
         SetMonitor(Settings.ScreenIndex);
-
-        AddRenderer();
 
         FileResources.extensions.ForEach(x => x.LoadExtension());
         Instance.AllowDrop = true;
@@ -75,7 +86,7 @@ public partial class MainForm : Window
         _trayIcon.ContextMenuStrip = new ContextMenuStrip();
         _trayIcon.ContextMenuStrip.Items.Add("Restart Control", null, (x, y) =>
         {
-            if (RendererMain.Instance != null) RendererMain.Instance.Destroy();
+            if (DynamicWinRenderer.Instance != null) DynamicWinRenderer.Instance.Dispose();
             Content = new Grid();
 
             AddRenderer();
@@ -93,6 +104,11 @@ public partial class MainForm : Window
         });
 
         _trayIcon.Visible = true;
+        
+        DragEnter += MainForm_DragEnter;
+        DragLeave += MainForm_DragLeave;
+        Drop += OnDrop;
+        MouseWheel += OnScroll;
     }
 
 
@@ -122,38 +138,26 @@ public partial class MainForm : Window
         return Screen.AllScreens.Length;
     }
 
-    private void OnRendering(object? sender, SKPaintSurfaceEventArgs e)
-    {
-        var currentTime = DateTime.Now;
-        if (currentTime - _lastRenderTime >= _targetElapsedTime)
-        {
-            _lastRenderTime = currentTime;
-        }
-    }
-
-    public bool isDragging { get; set; } = false;
-
-    public void OnScroll(object? sender, System.Windows.Input.MouseWheelEventArgs e)
+    private void OnScroll(object? sender, MouseWheelEventArgs e)
     {
         OnScrollEvent?.Invoke(e);
     }
 
     public void AddRenderer()
     {
-        if (RendererMain.Instance != null) RendererMain.Instance.Destroy();
+        if (DynamicWinRenderer.Instance != null) DynamicWinRenderer.Instance.Dispose();
 
-        _rendererMain = new RendererMain();
-        _rendererMain.PaintSurface += OnRendering;
+        _dynamicWinRenderer = new DynamicWinRenderer();
         
         var parent = new Grid();
-        parent.Children.Add(_rendererMain);
+        parent.Children.Add(_dynamicWinRenderer);
 
         Content = parent;
     }
 
-    public void MainForm_DragEnter(object? sender, DragEventArgs e)
+    private void MainForm_DragEnter(object? sender, DragEventArgs e)
     {
-        isDragging = true;
+        IsDragging = true;
         e.Effects = DragDropEffects.Copy;
 
         if (MenuManager.Instance.ActiveMenu is not DropFileMenu
@@ -163,9 +167,9 @@ public partial class MainForm : Window
         }
     }
 
-    public void MainForm_DragLeave(object? sender, EventArgs e)
+    private void MainForm_DragLeave(object? sender, EventArgs e)
     {
-        isDragging = false;
+        IsDragging = false;
 
         if (MenuManager.Instance.ActiveMenu is ConfigureShortcutMenu) return;
         MenuManager.OpenMenu(FileResources.HomeMenu);
@@ -187,7 +191,7 @@ public partial class MainForm : Window
             DataObject dataObject = new DataObject(DataFormats.FileDrop, files);
             var effects = DragDrop.DoDragDrop((DependencyObject)this, dataObject, DragDropEffects.Move | DragDropEffects.Copy);
 
-            if (RendererMain.Instance != null) RendererMain.Instance.Destroy();
+            if (DynamicWinRenderer.Instance != null) DynamicWinRenderer.Instance.Dispose();
             Content = new Grid();
             AddRenderer();
 
@@ -232,7 +236,7 @@ public partial class MainForm : Window
 
     public void OnDrop(object sender, DragEventArgs e)
     {
-        isDragging = false;
+        IsDragging = false;
 
         if(MenuManager.Instance.ActiveMenu is ConfigureShortcutMenu)
         {
@@ -244,8 +248,26 @@ public partial class MainForm : Window
         else if (e.Data.GetDataPresent(DataFormats.FileDrop))
         {
             DropFileMenu.Drop(e);
-            MenuManager.Instance.QueueOpenMenu(DynamicWin.Resources.FileResources.HomeMenu);
-            DynamicWin.Resources.FileResources.HomeMenu.isWidgetMode = false;
+            MenuManager.Instance.QueueOpenMenu(FileResources.HomeMenu);
+            FileResources.HomeMenu.isWidgetMode = false;
+        }
+        else if (e.Data.GetDataPresent(DataFormats.Text))
+        {
+            var imageUrl = e.Data.GetData(DataFormats.Text) as string;
+            if (string.IsNullOrEmpty(imageUrl))
+            {
+                MessageBox.Show("Invalid image URL.");
+                return;
+            }
+            
+            using var client = new HttpClient();
+            
+            var file = client.GetByteArrayAsync(imageUrl).GetAwaiter().GetResult();
+            var fileName = imageUrl.Split('/').Last();
+            
+            var fullPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonPictures), fileName);
+            
+            File.WriteAllBytes(fullPath, file);
         }
     }
 

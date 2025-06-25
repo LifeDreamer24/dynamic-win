@@ -1,9 +1,9 @@
 ﻿using DynamicWin.UI.Menu.Menus;
 using DynamicWin.UI.Widgets;
-using DynamicWin.Utils;
 using SkiaSharp;
 using System.IO;
 using System.Reflection;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin.Resources;
 

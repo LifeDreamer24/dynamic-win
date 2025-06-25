@@ -1,7 +1,6 @@
 ﻿using System.Windows;
 using System.Windows.Forms;
-using DynamicWin.Main;
-using DynamicWin.Utils;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin;
 

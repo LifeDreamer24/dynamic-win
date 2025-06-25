@@ -1,6 +1,7 @@
-﻿using DynamicWin.UI.Menu.Menus;
+﻿using DynamicWin.Rendering.Primitives;
+using DynamicWin.UI.Menu.Menus;
 using DynamicWin.UI.UIElements;
-using DynamicWin.Utils;
+using DynamicWin.UserSettings;
 using Newtonsoft.Json;
 
 namespace DynamicWin.UI.Widgets.Small;

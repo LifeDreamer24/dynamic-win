@@ -1,9 +1,11 @@
-﻿using DynamicWin.Utils;
-using SkiaSharp;
+﻿using SkiaSharp;
 using System.Drawing;
 using System.IO;
 using System.Windows.Forms;
-using ThumbnailGenerator;
+using DynamicWin.Interop;
+using DynamicWin.Rendering.Extensions;
+using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin.UI.UIElements.Custom;
 
@@ -32,7 +34,7 @@ internal class TrayFile : UIObject
 
         this.tray = tray;
 
-        Color = GetColor(Theme.Primary.Override(a: 0.45f));
+        Color = GetColor(Theme.Primary.Override(alpha: 0.45f));
         roundRadius = 7.5f;
 
         fileTitle = new DWText(this, DWText.Truncate(Path.GetFileNameWithoutExtension(file), 8) + Path.GetExtension(file), new Vec2(0, -10), UIAlignment.BottomCenter)
@@ -46,7 +48,7 @@ internal class TrayFile : UIObject
         var modifyDate = File.GetLastWriteTimeUtc(file);
         var modifyString = modifyDate.ToString("yy/MM/dd HH:mm");
 
-        var fileSize = Mathf.GetFileSizeString(file);
+        var fileSize = MathRendering.GetFileSizeString(file);
 
         AddLocalObject(new DWText(this, modifyString, new Vec2(0, 7.5f), UIAlignment.BottomCenter)
         {
@@ -79,7 +81,7 @@ internal class TrayFile : UIObject
             try
             {
                 int THUMB_SIZE = 64;
-                thumbnail = WindowsThumbnailProvider.GetThumbnail(
+                thumbnail = ThumbnailProvider.GetThumbnail(
                     file, THUMB_SIZE, THUMB_SIZE, ThumbnailOptions.None);
             }
             catch (System.Runtime.InteropServices.COMException e)
@@ -131,7 +133,7 @@ internal class TrayFile : UIObject
         //Size.X = fileTitle.TextBounds.X;
 
         cycle += deltaTime * speed;
-        Color = Theme.Primary.Override(a: Mathf.Remap((float)Math.Sin(cycle), -1, 1, 0.35f, 0.45f));
+        Color = Theme.Primary.Override(alpha: MathRendering.Remap((float)Math.Sin(cycle), -1, 1, 0.35f, 0.45f));
     }
 
     public override void OnMouseDown()
@@ -143,7 +145,7 @@ internal class TrayFile : UIObject
 
         if (isSelected)
         {
-            if (KeyboardListener.keyDown.Contains(Keys.LShiftKey) || KeyboardListener.keyDown.Contains(Keys.RShiftKey))
+            if (KeyboardListener.KeyDown.Contains(Keys.LShiftKey) || KeyboardListener.KeyDown.Contains(Keys.RShiftKey))
             {
                 int indexLast = 0;
                 if (TrayFile.lastSelected != null)
@@ -190,8 +192,8 @@ internal class TrayFile : UIObject
     {
         if (!IsHovering)
         {
-            if(!(KeyboardListener.keyDown.Contains(Keys.LControlKey) || KeyboardListener.keyDown.Contains(Keys.RControlKey)
-                                                               || KeyboardListener.keyDown.Contains(Keys.LShiftKey) || KeyboardListener.keyDown.Contains(Keys.RShiftKey)))
+            if(!(KeyboardListener.KeyDown.Contains(Keys.LControlKey) || KeyboardListener.KeyDown.Contains(Keys.RControlKey)
+                                                               || KeyboardListener.KeyDown.Contains(Keys.LShiftKey) || KeyboardListener.KeyDown.Contains(Keys.RShiftKey)))
                 isSelected = false;
         }
     }

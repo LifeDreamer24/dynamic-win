@@ -1,10 +1,10 @@
-﻿using DynamicWin.Main;
-using DynamicWin.Resources;
+﻿using DynamicWin.Rendering;
+using DynamicWin.Rendering.Primitives;
 using DynamicWin.UI.UIElements;
 using DynamicWin.UI.UIElements.Custom;
 using DynamicWin.UI.Widgets;
 using DynamicWin.UI.Widgets.Small;
-using DynamicWin.Utils;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin.UI.Menu.Menus;
 
@@ -21,7 +21,7 @@ public class HomeMenu : BaseMenu
 
     public void NextSong()
     {
-        if (RendererMain.Instance.MainIsland.IsHovering) return;
+        if (DynamicWinRenderer.Instance.MainIsland.IsHovering) return;
 
         songSizeAddition = 45;
         songLocalPosXAddition = 45;
@@ -29,7 +29,7 @@ public class HomeMenu : BaseMenu
 
     public void PrevSong()
     {
-        if (RendererMain.Instance.MainIsland.IsHovering) return;
+        if (DynamicWinRenderer.Instance.MainIsland.IsHovering) return;
 
         songSizeAddition = 45;
         songLocalPosXAddition = -45;
@@ -106,16 +106,21 @@ public class HomeMenu : BaseMenu
 
     Tray tray;
 
-    public override List<UIObject> InitializeMenu(IslandObject island)
+    public override List<UIObject> InitializeMenu(IslandObject island2)
     {
-        var objects = base.InitializeMenu(island);
+        var objects = base.InitializeMenu(island2);
 
-        smallWidgetsContainer = new UIObject(island, Vec2.zero, IslandSize(), UIAlignment.Center);
-        bigWidgetsContainer = new UIObject(island, Vec2.zero, IslandSize(), UIAlignment.Center);
+        IslandObject island = island2;//null; 
+
+        smallWidgetsContainer = new UIObject(Vec2.zero, IslandSize(), UIAlignment.Center);
+        island2.AddChild(smallWidgetsContainer);
+        
+        bigWidgetsContainer = new UIObject(Vec2.zero, IslandSize(), UIAlignment.Center);
+        island2.AddChild(bigWidgetsContainer);
         
         // Create elements
 
-        topContainer = new UIObject(island, new Vec2(0, 30), new Vec2(island.currSize.X, 50))
+        topContainer = new UIObject(island, new Vec2(0, 30), new Vec2(island2.currSize.X, 50))
         {
             Color = Color.Transparent
         };
@@ -133,8 +138,8 @@ public class HomeMenu : BaseMenu
         previous.SilentSetActive(false);
             
         // Add them to objects list
-        objects.Add(next);
-        objects.Add(previous);
+        Children.Add(next);
+        Children.Add(previous);
 
         widgetButton = new DWTextImageButton(topContainer, Resources.FileResources.Widgets, "Widgets", new Vec2(75 / 2 + 5, 0), new Vec2(75, 20), () =>
             {
@@ -146,7 +151,7 @@ public class HomeMenu : BaseMenu
         widgetButton.Text.Position = new Vec2(28.5f, 0);
         widgetButton.normalColor = Color.Transparent;
         widgetButton.hoverColor = Color.Transparent;
-        widgetButton.clickColor = Theme.Primary.Override(a: 0.35f);
+        widgetButton.clickColor = Theme.Primary.Override(alpha: 0.35f);
         widgetButton.roundRadius = 25;
 
         bigMenuItems.Add(widgetButton);
@@ -161,7 +166,7 @@ public class HomeMenu : BaseMenu
         trayButton.Text.Position = new Vec2(27.5f, 0);
         trayButton.normalColor = Color.Transparent;
         trayButton.hoverColor = Color.Transparent;
-        trayButton.clickColor = Theme.Primary.Override(a: 0.35f);
+        trayButton.clickColor = Theme.Primary.Override(alpha: 0.35f);
         trayButton.roundRadius = 25;
 
         bigMenuItems.Add(trayButton);
@@ -174,7 +179,7 @@ public class HomeMenu : BaseMenu
             UIAlignment.MiddleRight);
         settingsButton.normalColor = Color.Transparent;
         settingsButton.hoverColor = Color.Transparent;
-        settingsButton.clickColor = Theme.Primary.Override(a: 0.35f);
+        settingsButton.clickColor = Theme.Primary.Override(alpha: 0.35f);
         settingsButton.roundRadius = 25;
 
         bigMenuItems.Add(settingsButton);
@@ -240,19 +245,19 @@ public class HomeMenu : BaseMenu
         }
 
         smallLeftWidgets.ForEach(x => {
-            objects.Add(x);
+            Children.Add(x);
         });
 
         smallRightWidgets.ForEach(x => {
-            objects.Add(x);
+            Children.Add(x);
         });
 
         smallCenterWidgets.ForEach(x => {
-            objects.Add(x);
+            Children.Add(x);
         });
 
         bigWidgets.ForEach(x => {
-            objects.Add(x);
+            Children.Add(x);
             x.SilentSetActive(false);
         });
 
@@ -260,7 +265,7 @@ public class HomeMenu : BaseMenu
 
         bigMenuItems.ForEach(x =>
         {
-            objects.Add(x);
+            Children.Add(x);
             x.SilentSetActive(false);
         });
 
@@ -269,13 +274,13 @@ public class HomeMenu : BaseMenu
         {
         };
         next.SilentSetActive(false);
-        objects.Add(next);
+        Children.Add(next);
             
         previous = new DWImage(island, Resources.FileResources.Previous, new Vec2(-50, 0), new Vec2(30, 30), UIAlignment.Center)
         {
         };
         previous.SilentSetActive(false);
-        objects.Add(previous);
+        Children.Add(previous);
 
         return objects;
     }
@@ -309,31 +314,31 @@ public class HomeMenu : BaseMenu
 
         // Enable / Disable small widgets
 
-        smallLeftWidgets.ForEach(x => x.SetActive(!RendererMain.Instance.MainIsland.IsHovering));
-        smallCenterWidgets.ForEach(x => x.SetActive(!RendererMain.Instance.MainIsland.IsHovering));
-        smallRightWidgets.ForEach(x => x.SetActive(!RendererMain.Instance.MainIsland.IsHovering));
+        smallLeftWidgets.ForEach(x => x.SetActive(!DynamicWinRenderer.Instance.MainIsland.IsHovering));
+        smallCenterWidgets.ForEach(x => x.SetActive(!DynamicWinRenderer.Instance.MainIsland.IsHovering));
+        smallRightWidgets.ForEach(x => x.SetActive(!DynamicWinRenderer.Instance.MainIsland.IsHovering));
 
         // Enable / Disable big widgets / Tray
 
-        tray.SetActive(RendererMain.Instance.MainIsland.IsHovering && !isWidgetMode);
-        bigWidgets.ForEach(x => x.SetActive(RendererMain.Instance.MainIsland.IsHovering && isWidgetMode));
+        tray.SetActive(DynamicWinRenderer.Instance.MainIsland.IsHovering && !isWidgetMode);
+        bigWidgets.ForEach(x => x.SetActive(DynamicWinRenderer.Instance.MainIsland.IsHovering && isWidgetMode));
         bigMenuItems.ForEach(x =>
         {
             if(!(x is Tray))
             {
-                x.SetActive(RendererMain.Instance.MainIsland.IsHovering);
+                x.SetActive(DynamicWinRenderer.Instance.MainIsland.IsHovering);
             }
         });
 
-        widgetButton.normalColor = Color.Lerp(widgetButton.normalColor, isWidgetMode ? Color.White.Override(a: 0.075f) : Color.Transparent, 15f * RendererMain.Instance.DeltaTime);
-        trayButton.normalColor = Color.Lerp(trayButton.normalColor, (!isWidgetMode) ? Color.White.Override(a: 0.075f) : Color.Transparent, 15f * RendererMain.Instance.DeltaTime);
-        widgetButton.hoverColor = Color.Lerp(widgetButton.hoverColor, isWidgetMode ? Color.White.Override(a: 0.075f) : Color.Transparent, 15f * RendererMain.Instance.DeltaTime);
-        trayButton.hoverColor = Color.Lerp(trayButton.hoverColor, (!isWidgetMode) ? Color.White.Override(a: 0.075f) : Color.Transparent, 15f * RendererMain.Instance.DeltaTime);
+        widgetButton.normalColor = Color.LinearInterpolation(widgetButton.normalColor, isWidgetMode ? Color.White.Override(alpha: 0.075f) : Color.Transparent, 15f * DynamicWinRenderer.Instance.DeltaTime);
+        trayButton.normalColor = Color.LinearInterpolation(trayButton.normalColor, (!isWidgetMode) ? Color.White.Override(alpha: 0.075f) : Color.Transparent, 15f * DynamicWinRenderer.Instance.DeltaTime);
+        widgetButton.hoverColor = Color.LinearInterpolation(widgetButton.hoverColor, isWidgetMode ? Color.White.Override(alpha: 0.075f) : Color.Transparent, 15f * DynamicWinRenderer.Instance.DeltaTime);
+        trayButton.hoverColor = Color.LinearInterpolation(trayButton.hoverColor, (!isWidgetMode) ? Color.White.Override(alpha: 0.075f) : Color.Transparent, 15f * DynamicWinRenderer.Instance.DeltaTime);
 
-        RendererMain.Instance.MainIsland.LocalPosition.X = Mathf.Lerp(RendererMain.Instance.MainIsland.LocalPosition.X,
-            songLocalPosXAddition, 2f * RendererMain.Instance.DeltaTime);
-        songLocalPosXAddition = Mathf.Lerp(songLocalPosXAddition, 0f, 10 * RendererMain.Instance.DeltaTime);
-        songSizeAddition = Mathf.Lerp(songSizeAddition, 0f, 10 * RendererMain.Instance.DeltaTime);
+        DynamicWinRenderer.Instance.MainIsland.LocalPosition.X = MathRendering.LinearInterpolation(DynamicWinRenderer.Instance.MainIsland.LocalPosition.X,
+            songLocalPosXAddition, 2f * DynamicWinRenderer.Instance.DeltaTime);
+        songLocalPosXAddition = MathRendering.LinearInterpolation(songLocalPosXAddition, 0f, 10 * DynamicWinRenderer.Instance.DeltaTime);
+        songSizeAddition = MathRendering.LinearInterpolation(songSizeAddition, 0f, 10 * DynamicWinRenderer.Instance.DeltaTime);
 
         if(Math.Abs(songLocalPosXAddition) < 5f)
         {
@@ -353,11 +358,11 @@ public class HomeMenu : BaseMenu
                 previous.SetActive(true);
         }
 
-        if (!RendererMain.Instance.MainIsland.IsHovering)
+        if (!DynamicWinRenderer.Instance.MainIsland.IsHovering)
         {
             var smallContainerSize = IslandSize() - songSizeAddition;
             smallContainerSize -= sCD;
-            smallWidgetsContainer.LocalPosition.X = -RendererMain.Instance.MainIsland.LocalPosition.X;
+            smallWidgetsContainer.LocalPosition.X = -DynamicWinRenderer.Instance.MainIsland.LocalPosition.X;
             smallWidgetsContainer.Size = smallContainerSize;
 
             { // Left Small Widgets
@@ -398,9 +403,9 @@ public class HomeMenu : BaseMenu
                 }
             }
         }
-        else if (RendererMain.Instance.MainIsland.IsHovering)
+        else if (DynamicWinRenderer.Instance.MainIsland.IsHovering)
         {
-            topContainer.Size = new Vec2(RendererMain.Instance.MainIsland.currSize.X - 30, 30);
+            topContainer.Size = new Vec2(DynamicWinRenderer.Instance.MainIsland.currSize.X - 30, 30);
 
             var bigContainerSize = IslandSizeBig();
             bigContainerSize -= bCD;

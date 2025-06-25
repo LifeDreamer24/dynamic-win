@@ -1,6 +1,6 @@
-﻿using DynamicWin.UI.UIElements;
+﻿using DynamicWin.Rendering.Primitives;
+using DynamicWin.UI.UIElements;
 using DynamicWin.UI.Widgets.Big;
-using DynamicWin.Utils;
 
 namespace DynamicWin.UI.Widgets.Small;
 

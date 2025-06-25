@@ -1,8 +1,9 @@
 ﻿using DynamicWin.Interop;
+using DynamicWin.Rendering.Primitives;
 using DynamicWin.UI.Menu.Menus;
 using DynamicWin.UI.UIElements;
 using DynamicWin.UI.UIElements.Custom;
-using DynamicWin.Utils;
+using DynamicWin.UserSettings;
 using Newtonsoft.Json;
 using SkiaSharp;
 
@@ -57,7 +58,7 @@ class RegisterUsedDevicesOptions : IRegisterableSetting
         var loudnessMeter = new LoudnessMeter(null, new Vec2(0, 0), new Vec2(400, 7.5f));
 
         var thresholdSlider = new DWSlider(null, new Vec2(0, 0), new Vec2(400, 25));
-        thresholdSlider.value = Mathf.Clamp(saveData.indicatorThreshold, 0.05f, 1f);
+        thresholdSlider.value = MathRendering.Clamp(saveData.indicatorThreshold, 0.05f, 1f);
         thresholdSlider.clickCallback = (x) =>
         {
             saveData.indicatorThreshold = x;
@@ -155,18 +156,18 @@ public class UsedDevicesWidget : SmallWidgetBase
         bool isCamActive = DeviceUsageChecker.IsWebcamInUse();
         bool isMicActive = DeviceUsageChecker.IsMicrophoneInUse();
 
-        camDotSizeCurrent = Mathf.Lerp(camDotSizeCurrent, isCamActive ? camDotSize : 0f, 5f * deltaTime);
-        micDotSizeCurrent = Mathf.Lerp(micDotSizeCurrent, isMicActive ? micDotSize : 0f, 5f * deltaTime);
+        camDotSizeCurrent = MathRendering.LinearInterpolation(camDotSizeCurrent, isCamActive ? camDotSize : 0f, 5f * deltaTime);
+        micDotSizeCurrent = MathRendering.LinearInterpolation(micDotSizeCurrent, isMicActive ? micDotSize : 0f, 5f * deltaTime);
 
         if(isCamActive && isMicActive)
         {
-            camDotPositionX = Mathf.Lerp(camDotPositionX, seperation, 5f * deltaTime);
-            micDotPositionX = Mathf.Lerp(micDotPositionX, -seperation, 5f * deltaTime);
+            camDotPositionX = MathRendering.LinearInterpolation(camDotPositionX, seperation, 5f * deltaTime);
+            micDotPositionX = MathRendering.LinearInterpolation(micDotPositionX, -seperation, 5f * deltaTime);
         }
         else
         {
-            camDotPositionX = Mathf.Lerp(camDotPositionX, 0, 5f * deltaTime);
-            micDotPositionX = Mathf.Lerp(micDotPositionX, 0, 5f * deltaTime);
+            camDotPositionX = MathRendering.LinearInterpolation(camDotPositionX, 0, 5f * deltaTime);
+            micDotPositionX = MathRendering.LinearInterpolation(micDotPositionX, 0, 5f * deltaTime);
         }
 
         isMicrophoneIndicatorShowing = LoudnessMeter.GetMicrophoneLoudness() > RegisterUsedDevicesOptions.saveData.indicatorThreshold;
@@ -180,12 +181,12 @@ public class UsedDevicesWidget : SmallWidgetBase
 
         var camPos = GetScreenPosFromRawPosition(new Vec2(camDotPositionX, 0), new Vec2(0, camDotSizeCurrent / 2), UIAlignment.Center, this);
 
-        paint.Color = GetColor(Utils.Color.Lerp(Theme.Error, Theme.Error * 0.6f, Mathf.Remap((float)Math.Sin(sinCycleCamera), -1, 1, 0, 1))).Value();
+        paint.Color = GetColor(Color.LinearInterpolation(Theme.Error, Theme.Error * 0.6f, MathRendering.Remap((float)Math.Sin(sinCycleCamera), -1, 1, 0, 1))).Value();
         canvas.DrawCircle(camPos.X, camPos.Y, camDotSizeCurrent, paint);
 
         var micPos = GetScreenPosFromRawPosition(new Vec2(micDotPositionX, 0), new Vec2(0, micDotSizeCurrent / 2), UIAlignment.Center, this);
 
-        paint.Color = GetColor(Utils.Color.Lerp(Theme.Success, Theme.Success * 0.6f, Mathf.Remap((float)Math.Sin(sinCycleMicrophone), -1, 1, 0, 1))).Value();
+        paint.Color = GetColor(Color.LinearInterpolation(Theme.Success, Theme.Success * 0.6f, MathRendering.Remap((float)Math.Sin(sinCycleMicrophone), -1, 1, 0, 1))).Value();
         canvas.DrawCircle(micPos.X, micPos.Y, micDotSizeCurrent, paint);
 
         if (isMicrophoneIndicatorShowing && RegisterUsedDevicesOptions.saveData.enableIndicator)

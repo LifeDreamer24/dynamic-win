@@ -1,14 +1,15 @@
-﻿using DynamicWin.Main;
-using DynamicWin.Resources;
-using DynamicWin.UI.UIElements;
+﻿using DynamicWin.UI.UIElements;
 using DynamicWin.UI.Widgets;
 using DynamicWin.UI.Widgets.Small;
-using DynamicWin.Utils;
 using SkiaSharp;
 using System.IO;
 using System.Reflection;
 using System.Windows.Controls;
 using System.Windows.Input;
+using DynamicWin.Interop;
+using DynamicWin.Rendering;
+using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 using static DynamicWin.UI.UIElements.IslandObject;
 
 namespace DynamicWin.UI.Menu.Menus;
@@ -301,8 +302,8 @@ public class SettingsMenu : BaseMenu
     {
         base.Update();
 
-        ySmoothScroll = Mathf.Lerp(ySmoothScroll,
-            yScrollOffset, 10f * RendererMain.Instance.DeltaTime);
+        ySmoothScroll = MathRendering.LinearInterpolation(ySmoothScroll,
+            yScrollOffset, 10f * DynamicWinRenderer.Instance.DeltaTime);
 
         bottomMask.blurAmount = 15;
 
@@ -310,9 +311,9 @@ public class SettingsMenu : BaseMenu
         var yPos = 35f;
         var spacing = 15f;
 
-        for(int i = 0; i < UiObjects.Count - 2; i++)
+        for(int i = 0; i < Children.Count - 2; i++)
         {
-            var uiObject = UiObjects[i];
+            var uiObject = Children[i];
             if (!uiObject.IsEnabled) continue;
 
             uiObject.LocalPosition.Y = yPos + ySmoothScroll;
@@ -321,8 +322,8 @@ public class SettingsMenu : BaseMenu
             if (yPos > IslandSize().Y - 45) yScrollLim += uiObject.Size.Y + spacing;
         }
 
-        yScrollOffset = Mathf.Lerp(yScrollOffset,
-            Mathf.Clamp(yScrollOffset, -yScrollLim, 0f), 15f * RendererMain.Instance.DeltaTime);
+        yScrollOffset = MathRendering.LinearInterpolation(yScrollOffset,
+            MathRendering.Clamp(yScrollOffset, -yScrollLim, 0f), 15f * DynamicWinRenderer.Instance.DeltaTime);
     }
 
     public override Vec2 IslandSize()
@@ -406,7 +407,7 @@ internal class BigWidgetAdder : UIObject
 
     public BigWidgetAdder(UIObject? parent, Vec2 position, Vec2 size, UIAlignment alignment = UIAlignment.TopCenter) : base(parent, position, size, alignment)
     {
-        Color = Theme.WidgetBackground.Override(a: 0.1f);
+        Color = Theme.WidgetBackground.Override(alpha: 0.1f);
         roundRadius = 20;
 
         Anchor.Y = 0;
@@ -424,12 +425,12 @@ internal class BigWidgetAdder : UIObject
 
         int line = (int)(Math.Floor(displays.Count / maxE));
 
-        addNew.LocalPosition.Y  = Mathf.Lerp(addNew.LocalPosition.Y, -line * 45 - 45, 15f * deltaTime);
-        addNew.LocalPosition.X  = Mathf.Lerp(addNew.LocalPosition.X, isDisplayEven() ? Size.X / 2f : Size.X / 1.3333333f, 15f * deltaTime);
-        addNew.Size.X           = Mathf.Lerp(addNew.Size.X, isDisplayEven() ? Size.X : Size.X / 2, 15f * deltaTime);
+        addNew.LocalPosition.Y  = MathRendering.LinearInterpolation(addNew.LocalPosition.Y, -line * 45 - 45, 15f * deltaTime);
+        addNew.LocalPosition.X  = MathRendering.LinearInterpolation(addNew.LocalPosition.X, isDisplayEven() ? Size.X / 2f : Size.X / 1.3333333f, 15f * deltaTime);
+        addNew.Size.X           = MathRendering.LinearInterpolation(addNew.Size.X, isDisplayEven() ? Size.X : Size.X / 2, 15f * deltaTime);
 
         var lines2 = (int)Math.Max(1, (displays.Count / maxE + 1));
-        Size.Y = Mathf.Lerp(Size.Y, lines2 * 45, 15f * RendererMain.Instance.DeltaTime);
+        Size.Y = MathRendering.LinearInterpolation(Size.Y, lines2 * 45, 15f * DynamicWinRenderer.Instance.DeltaTime);
     }
 
     bool isDisplayEven()
@@ -542,7 +543,7 @@ internal class AddNew : UIObject
             Color = Theme.IconColor
         });
 
-        Color = Theme.IconColor.Override(a: 0.4f);
+        Color = Theme.IconColor.Override(alpha: 0.4f);
     }
 
     public override void Draw(SKCanvas canvas)
@@ -563,7 +564,7 @@ internal class AddNew : UIObject
         canvas.DrawRoundRect(placeRect, paint);
 
         placeRect.Deflate(5f, 5f);
-        paint.Color = Color.Override(a: 0.05f).Value();
+        paint.Color = Color.Override(alpha: 0.05f).Value();
         paint.IsStroke = false;
 
         canvas.DrawRoundRect(placeRect, paint);
@@ -586,7 +587,7 @@ internal class BigWidgetAdderDisplay : UIObject
 
         roundRadius = 45;
 
-        color = Theme.WidgetBackground.Override(a: 0.15f);
+        color = Theme.WidgetBackground.Override(alpha: 0.15f);
     }
 
     public override void Draw(SKCanvas canvas)
@@ -614,8 +615,8 @@ internal class BigWidgetAdderDisplay : UIObject
     {
         base.Update(deltaTime);
 
-        color.a = Mathf.Lerp(color.a, IsHovering ? 0.2f : 0.15f, 7.5f * deltaTime);
-        s = Mathf.Lerp(s, IsHovering ? 1.025f : 1, 15f * deltaTime);
+        color = color.Override(alpha: MathRendering.LinearInterpolation(color.Alpha, IsHovering ? 0.2f : 0.15f, 7.5f * deltaTime));
+        s = MathRendering.LinearInterpolation(s, IsHovering ? 1.025f : 1, 15f * deltaTime);
     }
 
     public Action onEditRemoveWidget;
@@ -647,11 +648,11 @@ internal class SmallWidgetAdder : UIObject
 {
     public SmallWidgetAdder(UIObject? parent, Vec2 position, Vec2 size, UIAlignment alignment = UIAlignment.TopCenter) : base(parent, position, size, alignment)
     {
-        Color = Theme.WidgetBackground.Override(a: 0.1f);
+        Color = Theme.WidgetBackground.Override(alpha: 0.1f);
         roundRadius = 25;
 
         container = new UIObject(this, Vec2.zero, new Vec2(size.X - 100, size.Y), UIAlignment.Center);
-        container.Color = Utils.Color.Transparent;
+        container.Color = Color.Transparent;
         AddLocalObject(container);
 
         UpdateWidgetDisplay();
@@ -994,10 +995,10 @@ public class MultiSelectionButton : UIObject
 
         foreach (var button in buttons)
         {
-            button.normalColor = Theme.Secondary.Override(a: 0.9f);
+            button.normalColor = Theme.Secondary.Override(alpha: 0.9f);
         }
 
-        buttons[index].normalColor = (Theme.Primary * 0.65f).Override(a: 0.75f);
+        buttons[index].normalColor = (Theme.Primary * 0.65f).Override(alpha: 0.75f);
     }
 
     void OnClick(int index)

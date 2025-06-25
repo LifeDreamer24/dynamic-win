@@ -1,4 +1,5 @@
-﻿using DynamicWin.Utils;
+﻿using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 using SkiaSharp;
 
 namespace DynamicWin.UI.UIElements.Custom;
@@ -18,7 +19,7 @@ internal class DropFileElement : UIObject
     {
         base.Update(deltaTime);
 
-        _currentColor = Utils.Color.Lerp(_currentColor, IsHovering ? Theme.Secondary * 2f : Theme.Secondary, 5f * deltaTime);
+        _currentColor = Color.LinearInterpolation(_currentColor, IsHovering ? Theme.Secondary * 2f : Theme.Secondary, 5f * deltaTime);
     }
 
     public override void Draw(SKCanvas canvas)

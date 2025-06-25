@@ -1,5 +1,5 @@
-﻿using DynamicWin.Main;
-using DynamicWin.Utils;
+﻿using DynamicWin.Rendering;
+using DynamicWin.Rendering.Primitives;
 
 namespace DynamicWin.UI.UIElements.Custom;
 
@@ -34,7 +34,7 @@ public class DWSlider : DWProgressBar
         base.Update(deltaTime);
 
         if (IsMouseDown)
-            this.value = Mathf.Clamp(Mathf.Remap(RendererMain.CursorPosition.X - Position.X, 0, Size.X, 0, 1),
+            this.value = MathRendering.Clamp(MathRendering.Remap(DynamicWinRenderer.CursorPosition.X - Position.X, 0, Size.X, 0, 1),
                 0.05f, 1);
     }
 }

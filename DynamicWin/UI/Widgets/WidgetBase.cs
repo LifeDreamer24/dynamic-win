@@ -1,7 +1,8 @@
-﻿using DynamicWin.Main;
-using DynamicWin.Utils;
-using SkiaSharp;
+﻿using SkiaSharp;
 using System.Windows.Controls;
+using DynamicWin.Rendering;
+using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin.UI.Widgets;
 
@@ -61,7 +62,7 @@ public class WidgetBase : UIObject
     {
         Size = GetWidgetSize();
 
-        _hoverProgress = Mathf.Lerp(_hoverProgress, IsHovering ? 1f : 0f, 10f * RendererMain.Instance.DeltaTime);
+        _hoverProgress = MathRendering.LinearInterpolation(_hoverProgress, IsHovering ? 1f : 0f, 10f * DynamicWinRenderer.Instance.DeltaTime);
 
         if(_hoverProgress > 0.025f)
         {
@@ -71,7 +72,7 @@ public class WidgetBase : UIObject
                 dy: 0, 
                 sigmaX: _hoverProgress * 10, 
                 sigmaY: _hoverProgress * 10, 
-                color: Theme.WidgetBackground.Override(a: _hoverProgress / 10).Value());
+                color: Theme.WidgetBackground.Override(alpha: _hoverProgress / 10).Value());
 
             canvas.Save();
 

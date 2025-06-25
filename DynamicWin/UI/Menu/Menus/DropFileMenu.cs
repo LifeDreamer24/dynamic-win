@@ -1,7 +1,8 @@
 ﻿using DynamicWin.UI.UIElements;
 using DynamicWin.UI.UIElements.Custom;
-using DynamicWin.Utils;
 using System.Windows;
+using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin.UI.Menu.Menus;
 

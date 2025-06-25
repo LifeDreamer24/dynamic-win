@@ -1,12 +1,12 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
-using DynamicWin.DllImports;
 using DynamicWin.Interop.DllImports;
+// ReSharper disable InconsistentNaming
 
-namespace DynamicWin.Utils;
+namespace DynamicWin.Interop;
 
-public class KeyboardListener
+public static class KeyboardListener
 {
     private const int WH_KEYBOARD_LL = 13;
     private const int WM_KEYDOWN = 0x0100;
@@ -37,26 +37,26 @@ public class KeyboardListener
     internal delegate IntPtr LowLevelKeyboardProc(
         int nCode, IntPtr wParam, IntPtr lParam);
 
-    public static List<Keys> keyDown = new List<Keys>();
-    public static Action<Keys, KeyModifier> onKeyDown;
+    public static List<Keys> KeyDown = [];
+    public static Action<Keys, KeyModifier> OnKeyDown;
 
     private static IntPtr HookCallback(
         int nCode, IntPtr wParam, IntPtr lParam)
     {
         int vkCode = Marshal.ReadInt32(lParam);
-        if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN && !keyDown.Contains((Keys)vkCode))
+        if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN && !KeyDown.Contains((Keys)vkCode))
         {
-            keyDown.Add((Keys)vkCode);
+            KeyDown.Add((Keys)vkCode);
 
             var keyModi = new KeyModifier();
-            keyModi.isShiftDown = keyDown.Contains(Keys.LShiftKey) || keyDown.Contains(Keys.RShiftKey);
-            keyModi.isCtrlDown = keyDown.Contains(Keys.LControlKey) || keyDown.Contains(Keys.RControlKey);
+            keyModi.IsShiftDown = KeyDown.Contains(Keys.LShiftKey) || KeyDown.Contains(Keys.RShiftKey);
+            keyModi.IsCtrlDown = KeyDown.Contains(Keys.LControlKey) || KeyDown.Contains(Keys.RControlKey);
 
-            onKeyDown?.Invoke((Keys)vkCode, keyModi);
+            OnKeyDown?.Invoke((Keys)vkCode, keyModi);
         }
-        else if(nCode >= 0 && wParam == (IntPtr)WM_KEYUP && keyDown.Contains((Keys)vkCode))
+        else if(nCode >= 0 && wParam == (IntPtr)WM_KEYUP && KeyDown.Contains((Keys)vkCode))
         {
-            keyDown.Remove((Keys)vkCode);
+            KeyDown.Remove((Keys)vkCode);
         }
         return User32.CallNextHookEx(_hookID, nCode, wParam, lParam);
     }
@@ -64,8 +64,8 @@ public class KeyboardListener
 
 public struct KeyModifier
 {
-    public bool isCtrlDown = false;
-    public bool isShiftDown = false;
+    public bool IsCtrlDown = false;
+    public bool IsShiftDown = false;
 
     public KeyModifier()
     {

@@ -1,6 +1,7 @@
-﻿using DynamicWin.Main;
+﻿using DynamicWin.Rendering;
+using DynamicWin.Rendering.Primitives;
 using DynamicWin.UI.UIElements;
-using DynamicWin.Utils;
+using DynamicWin.UserSettings;
 using SkiaSharp;
 
 namespace DynamicWin.UI.Menu.Menus;
@@ -16,7 +17,7 @@ public class TimerOverMenu : BaseMenu
     {
         var objects = base.InitializeMenu(island);
 
-        overText = new DWText(island, "Timer Over!", new Utils.Vec2(0, 0), UIAlignment.Center)
+        overText = new DWText(island, "Timer Over!", new Vec2(0, 0), UIAlignment.Center)
         {
             TextSize = 20,
             Font = Resources.FileResources.InterBold
@@ -48,12 +49,12 @@ public class TimerOverMenu : BaseMenu
     {
         base.Update();
 
-        var delta = RendererMain.Instance.DeltaTime;
+        var delta = DynamicWinRenderer.Instance.DeltaTime;
         sinCycle += delta * speed;
 
-        overText.TextSize = Mathf.Remap((float)Math.Sin(sinCycle), -1, 1, 20, 25);
+        overText.TextSize = MathRendering.Remap((float)Math.Sin(sinCycle), -1, 1, 20, 25);
 
-        if(Mathf.LimitDecimalPoints((float)Math.Sin(sinCycle + 0.1f), 1) == 1f)
+        if(MathRendering.LimitDecimalPoints((float)Math.Sin(sinCycle + 0.1f), 1) == 1f)
         {
             islandSizeMulti = 1.2f;
             if(wave.waveSize > 45)
@@ -64,9 +65,9 @@ public class TimerOverMenu : BaseMenu
             wave.SilentSetActive(true);
         }
 
-        islandSizeMulti = Mathf.Lerp(islandSizeMulti, 1f, 5f * delta);
+        islandSizeMulti = MathRendering.LinearInterpolation(islandSizeMulti, 1f, 5f * delta);
 
-        if (RendererMain.Instance.MainIsland.IsHovering && sinCycle >= 1)
+        if (DynamicWinRenderer.Instance.MainIsland.IsHovering && sinCycle >= 1)
             MenuManager.CloseOverlay();
     }
 
@@ -103,8 +104,8 @@ internal class DWWave : UIObject
 
         waveSize += waveGrowSpeed * deltaTime;
 
-        blurAmount = Mathf.Clamp(waveSize, 0, 45);
-        Alpha = 1f - Mathf.Clamp((waveSize - 15) / waveGrowSpeed * 2, 0, 1);
+        blurAmount = MathRendering.Clamp(waveSize, 0, 45);
+        Alpha = 1f - MathRendering.Clamp((waveSize - 15) / waveGrowSpeed * 2, 0, 1);
     }
 
     public override void Draw(SKCanvas canvas)
@@ -113,9 +114,9 @@ internal class DWWave : UIObject
 
         var rect = SKRect.Create(Position.X, Position.Y, Size.X, Size.Y);
 
-        canvas.ClipRoundRect(RendererMain.Instance.MainIsland.GetRect(), SKClipOperation.Difference, true);
+        canvas.ClipRoundRect(DynamicWinRenderer.Instance.MainIsland.GetRect(), SKClipOperation.Difference, true);
 
-        paint.Color = GetColor(Theme.Primary.Override(a: 1)).Value();
+        paint.Color = GetColor(Theme.Primary.Override(alpha: 1)).Value();
         paint.IsStroke = true;
         paint.StrokeWidth = 5f;
 

@@ -1,4 +1,5 @@
-﻿using DynamicWin.Utils;
+﻿using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin.UI.UIElements;
 
@@ -6,9 +7,9 @@ public class DWButton : UIObject
 {
     // Button Color
 
-    public Color normalColor = Theme.IconColor.Override(a: 0.15f);
-    public Color hoverColor = Theme.IconColor.Override(a: 0.25f);
-    public Color clickColor = Theme.IconColor.Override(a: 0.65f);
+    public Color normalColor = Theme.IconColor.Override(alpha: 0.15f);
+    public Color hoverColor = Theme.IconColor.Override(alpha: 0.25f);
+    public Color clickColor = Theme.IconColor.Override(alpha: 0.65f);
 
     public float colorSmoothingSpeed = 15f;
 
@@ -60,13 +61,13 @@ public class DWButton : UIObject
         Size = scaleSecondOrder.Update(deltaTime, currentSize);
 
         if (IsHovering && !IsMouseDown)
-            Color = GetColor(Utils.Color.Lerp(Color, hoverColor, colorSmoothingSpeed * deltaTime));
+            Color = GetColor(Color.LinearInterpolation(Color, hoverColor, colorSmoothingSpeed * deltaTime));
         else if (IsMouseDown)
-            Color = GetColor(Utils.Color.Lerp(Color, clickColor, colorSmoothingSpeed * deltaTime));
+            Color = GetColor(Color.LinearInterpolation(Color, clickColor, colorSmoothingSpeed * deltaTime));
         else if (!IsHovering && !IsMouseDown)
-            Color = GetColor(Utils.Color.Lerp(Color, normalColor, colorSmoothingSpeed * deltaTime));
+            Color = GetColor(Color.LinearInterpolation(Color, normalColor, colorSmoothingSpeed * deltaTime));
         else
-            Color = GetColor(Utils.Color.Lerp(Color, normalColor, colorSmoothingSpeed * deltaTime));
+            Color = GetColor(Color.LinearInterpolation(Color, normalColor, colorSmoothingSpeed * deltaTime));
     }
 
     public override void OnMouseUp()

@@ -1,4 +1,4 @@
-﻿using DynamicWin.Utils;
+﻿using DynamicWin.Rendering.Primitives;
 using SkiaSharp;
 
 namespace DynamicWin.UI.UIElements;

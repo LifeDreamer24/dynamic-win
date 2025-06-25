@@ -1,11 +1,10 @@
-﻿using DynamicWin.Main;
-using DynamicWin.Utils;
-using SkiaSharp;
+﻿using SkiaSharp;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using DynamicWin.Interop;
-using DynamicWin.UI.UIElements;
+using DynamicWin.Rendering;
+using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin.UI;
 
@@ -23,7 +22,7 @@ public class UIObject
     private Vec2 localPosition = Vec2.zero;
     private Vec2 anchor = new Vec2(0.5f, 0.5f);
     private Vec2 size = Vec2.one;
-    private Color color = Utils.Color.White;
+    private Color color = Color.White;
     
     private bool? _needsRendering = null;
 
@@ -45,7 +44,7 @@ public class UIObject
         }
     }
     // Temporary fix for null size especially with BottomLeft getter
-    public Color Color { get => new Color(color.r, color.g, color.b, color.a * Alpha); set => color = value; }
+    public Color Color { get => new Color(color.Red, color.Green, color.Blue, color.Alpha * Alpha); set => color = value; }
 
     private bool isHovering = false;
     private bool isMouseDown = false;
@@ -83,7 +82,7 @@ public class UIObject
     private float pAlpha = 1f;
     private float oAlpha = 1f;
 
-    public float Alpha { get => (float) Math.Min(pAlpha, Math.Min(oAlpha, RendererMain.Instance.alphaOverride)); set => oAlpha = value; }
+    public float Alpha { get => (float) Math.Min(pAlpha, Math.Min(oAlpha, DynamicWinRenderer.Instance.AlphaOverride)); set => oAlpha = value; }
 
     public float PaddingTop {
         get => LocalPosition.Y;
@@ -115,8 +114,8 @@ public class UIObject
 
         this.contextMenu = CreateContextMenu();
 
-        RendererMain.Instance.ContextMenuOpening += CtxOpen;
-        RendererMain.Instance.ContextMenuClosing += CtxClose;
+        DynamicWinRenderer.Instance.ContextMenuOpening += CtxOpen;
+        DynamicWinRenderer.Instance.ContextMenuClosing += CtxClose;
     }
     
     public UIObject(Vec2 position, Vec2 size, UIAlignment alignment = UIAlignment.TopCenter, List<UIObject>? children = null)
@@ -132,13 +131,21 @@ public class UIObject
 
         contextMenu = CreateContextMenu();
 
-        RendererMain.Instance.ContextMenuOpening += CtxOpen;
-        RendererMain.Instance.ContextMenuClosing += CtxClose;
+        DynamicWinRenderer.Instance.ContextMenuOpening += CtxOpen;
+        DynamicWinRenderer.Instance.ContextMenuClosing += CtxClose;
+    }
+    
+    public void AddChild(UIObject child)
+    {
+        if (child == null) return;
+
+        child.parent = this;
+        //localObjects.Add(child);
     }
 
     void CtxOpen(object sender, RoutedEventArgs e)
     {
-        if(RendererMain.Instance.ContextMenu != null)
+        if(DynamicWinRenderer.Instance.ContextMenu != null)
             canInteract = false;
     }
 
@@ -155,7 +162,7 @@ public class UIObject
 
         if (parent == null)
         {
-            Vec2 screenDim = RendererMain.ScreenDimensions;
+            Vec2 screenDim = DynamicWinRenderer.ScreenDimensions;
             if (Size == null) Size = Vec2.one;
             switch (alignment)
             {
@@ -232,7 +239,7 @@ public class UIObject
     {
         if(parent == null)
         {
-            Vec2 screenDim = RendererMain.ScreenDimensions;
+            Vec2 screenDim = DynamicWinRenderer.ScreenDimensions;
             switch (alignment)
             {
                 case UIAlignment.TopLeft:
@@ -307,7 +314,7 @@ public class UIObject
     public float GetBlur()
     {
         if (!Settings.AllowBlur) return 0f;
-        return Math.Max(blurAmount, Math.Max(localBlurAmount, Math.Max((parent == null) ? 0f : parent.GetBlur(), RendererMain.Instance.blurOverride)));
+        return Math.Max(blurAmount, Math.Max(localBlurAmount, Math.Max((parent == null) ? 0f : parent.GetBlur(), DynamicWinRenderer.Instance.BlurOverride)));
     }
 
     bool canInteract = true;
@@ -321,7 +328,7 @@ public class UIObject
 
         if (canInteract)
         {
-            var rect = SKRect.Create(RendererMain.CursorPosition.X, RendererMain.CursorPosition.Y, 1, 1);
+            var rect = SKRect.Create(DynamicWinRenderer.CursorPosition.X, DynamicWinRenderer.CursorPosition.Y, 1, 1);
             var isCurrentlyHovering = GetInteractionRect().Contains(rect);
             var hasHoveringChanged = isHovering != isCurrentlyHovering;
 
@@ -431,7 +438,7 @@ public class UIObject
 
     public Color GetColor(Color color)
     {
-        return new Color(color.r, color.g, color.b, color.a * Alpha);
+        return new Color(color.Red, color.Green, color.Blue, color.Alpha * Alpha);
     }
 
     public void DestroyCall() 
@@ -483,15 +490,15 @@ public class UIObject
             {
                 var tEased = Easings.EaseOutCubic(t);
 
-                localBlurAmount = Mathf.Lerp(blurSizeOnDisable, 0, tEased);
-                Alpha = Mathf.Lerp(0, 1, tEased);
+                localBlurAmount = MathRendering.LinearInterpolation(blurSizeOnDisable, 0, tEased);
+                Alpha = MathRendering.LinearInterpolation(0, 1, tEased);
             }
             else
             {
                 var tEased = Easings.EaseOutCubic(t);
 
-                localBlurAmount = Mathf.Lerp(0, blurSizeOnDisable, tEased);
-                Alpha = Mathf.Lerp(1, 0, tEased);
+                localBlurAmount = MathRendering.LinearInterpolation(0, blurSizeOnDisable, tEased);
+                Alpha = MathRendering.LinearInterpolation(1, 0, tEased);
             }
         };
         toggleAnim.onAnimationEnd += () =>

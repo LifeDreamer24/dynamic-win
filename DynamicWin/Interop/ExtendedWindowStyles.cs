@@ -1,6 +1,5 @@
 ﻿using System.Windows;
 using System.Windows.Interop;
-using DynamicWin.DllImports;
 using DynamicWin.Interop.DllImports;
 
 // ReSharper disable InconsistentNaming

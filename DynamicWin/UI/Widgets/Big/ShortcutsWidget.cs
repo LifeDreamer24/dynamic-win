@@ -1,15 +1,16 @@
-﻿using DynamicWin.Resources;
-using DynamicWin.UI.Menu;
+﻿using DynamicWin.UI.Menu;
 using DynamicWin.UI.Menu.Menus;
 using DynamicWin.UI.UIElements;
-using DynamicWin.Utils;
 using Newtonsoft.Json;
 using SkiaSharp;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Windows.Controls;
-using ThumbnailGenerator;
+using DynamicWin.Interop;
+using DynamicWin.Rendering.Extensions;
+using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin.UI.Widgets.Big;
 
@@ -122,7 +123,7 @@ internal class ShortcutButton : DWButton
         {
             canvas.DrawRoundRect(rect, paint);
 
-            paint.Color = GetColor(Theme.Primary.Override(a: 0.35f)).Value();
+            paint.Color = GetColor(Theme.Primary.Override(alpha: 0.35f)).Value();
             paint.IsStroke = true;
             paint.StrokeWidth = 2f;
 
@@ -187,7 +188,7 @@ internal class ShortcutButton : DWButton
             try
             {
                 int THUMB_SIZE = 24;
-                thumbnail = WindowsThumbnailProvider.GetThumbnail(
+                thumbnail = ThumbnailProvider.GetThumbnail(
                     savedShortcut.path, THUMB_SIZE, THUMB_SIZE, ThumbnailOptions.None);
             }
             catch (System.Runtime.InteropServices.COMException e)

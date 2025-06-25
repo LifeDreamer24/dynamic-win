@@ -1,6 +1,5 @@
 ﻿using System.Runtime.InteropServices;
-using DynamicWin.DllImports;
-using DynamicWin.Utils;
+using DynamicWin.Interop.DllImports.Data;
 
 namespace DynamicWin.Interop.DllImports;
 
@@ -29,4 +28,7 @@ internal static class User32
 
     [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
     internal static extern IntPtr GetModuleHandle(string lpModuleName);
+    
+    [DllImport("user32.dll")]
+    internal static extern void Keybd_event(byte bVk, byte bScan, uint dwFlags, int dwExtraInfo);
 }

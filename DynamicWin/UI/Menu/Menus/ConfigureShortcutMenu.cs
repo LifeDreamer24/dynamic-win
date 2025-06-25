@@ -1,10 +1,9 @@
-﻿using DynamicWin.Resources;
-using DynamicWin.UI.UIElements;
+﻿using DynamicWin.UI.UIElements;
 using DynamicWin.UI.UIElements.Custom;
 using DynamicWin.UI.Widgets.Big;
-using DynamicWin.Utils;
 using System.IO;
 using System.Windows;
+using DynamicWin.Rendering.Primitives;
 
 namespace DynamicWin.UI.Menu.Menus;
 
@@ -60,7 +59,7 @@ internal class ConfigureShortcutMenu : BaseMenu
     {
         var objects = base.InitializeMenu(island);
 
-        DWTextButton saveAndBack = new DWTextButton(island, "Save & Back", new Utils.Vec2(0, -30), new Utils.Vec2(IslandSize().X - 30, 30), () =>
+        DWTextButton saveAndBack = new DWTextButton(island, "Save & Back", new Vec2(0, -30), new Vec2(IslandSize().X - 30, 30), () =>
         {
             _shortcutButtonToConfigure.SetShortcut(save);
             MenuManager.OpenMenu(Resources.FileResources.HomeMenu);

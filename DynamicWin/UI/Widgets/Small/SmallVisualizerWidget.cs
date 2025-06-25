@@ -1,4 +1,5 @@
-﻿using DynamicWin.Utils;
+﻿using DynamicWin.Rendering.Primitives;
+using DynamicWin.UI.UIElements;
 
 namespace DynamicWin.UI.Widgets.Small;
 

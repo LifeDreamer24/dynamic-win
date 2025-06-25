@@ -1,4 +1,5 @@
-﻿using DynamicWin.Utils;
+﻿using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 using SkiaSharp;
 
 namespace DynamicWin.UI.UIElements;
@@ -88,9 +89,9 @@ public class DWText : UIObject
             {
                 float t = Easings.EaseInQuint(x * 2);
 
-                textSize = Mathf.Lerp(ogTextSize, ogTextSize / 1.5f, t);
-                localBlurAmount = Mathf.Lerp(0, 10, t);
-                Alpha = Mathf.Lerp(1, 0, x);
+                textSize = MathRendering.LinearInterpolation(ogTextSize, ogTextSize / 1.5f, t);
+                localBlurAmount = MathRendering.LinearInterpolation(0, 10, t);
+                Alpha = MathRendering.LinearInterpolation(1, 0, x);
             }
             else
             {
@@ -98,9 +99,9 @@ public class DWText : UIObject
 
                 float t = Easings.EaseOutQuint((x - 0.5f) * 2);
 
-                textSize = Mathf.Lerp(ogTextSize / 2.5f, ogTextSize, t);
-                localBlurAmount = Mathf.Lerp(10, 0, t);
-                Alpha = Mathf.Lerp(0, 1, x);
+                textSize = MathRendering.LinearInterpolation(ogTextSize / 2.5f, ogTextSize, t);
+                localBlurAmount = MathRendering.LinearInterpolation(10, 0, t);
+                Alpha = MathRendering.LinearInterpolation(0, 1, x);
             }
         };
 

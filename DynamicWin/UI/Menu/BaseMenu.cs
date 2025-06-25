@@ -1,18 +1,21 @@
-﻿using DynamicWin.Main;
+﻿using DynamicWin.Rendering;
+using DynamicWin.Rendering.Primitives;
 using DynamicWin.UI.UIElements;
-using DynamicWin.Utils;
 
 namespace DynamicWin.UI.Menu;
 
 public class BaseMenu : IDisposable
 {
-    private List<UIObject> uiObjects;
-
-    public List<UIObject> UiObjects => uiObjects;
+    public List<UIObject> Children { get; }
 
     public BaseMenu()
     {
-        uiObjects = InitializeMenu(RendererMain.Instance.MainIsland);
+        Children = [];
+        InitializeMenu(DynamicWinRenderer.Instance.MainIsland);
+        foreach (var child in Children)
+        {
+            //DynamicWinRenderer.Instance.MainIsland.AddChild(child);
+        }
     }
 
     public virtual Vec2 IslandSize() { return new Vec2(200, 45); }
@@ -20,7 +23,7 @@ public class BaseMenu : IDisposable
 
     public virtual Color IslandBorderColor() { return Color.Transparent; }
 
-    public virtual List<UIObject> InitializeMenu(IslandObject island) { return new List<UIObject>(); }
+    public virtual List<UIObject> InitializeMenu(IslandObject island) { return Children; }
 
     public virtual void Update() { }
 
@@ -28,6 +31,6 @@ public class BaseMenu : IDisposable
 
     public void Dispose()
     {
-        uiObjects.Clear();
+        Children.Clear();
     }
 }

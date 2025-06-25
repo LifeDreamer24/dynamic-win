@@ -1,7 +1,9 @@
 ﻿using DynamicWin.UI.UIElements;
-using DynamicWin.Utils;
 using SkiaSharp;
 using System.Diagnostics;
+using DynamicWin.Interop;
+using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin.UI.Widgets.Big;
 
@@ -46,9 +48,9 @@ public class MediaWidget : WidgetBase
         }, alignment: UIAlignment.Center)
         {
             roundRadius = 25,
-            normalColor = Utils.Color.Transparent,
-            hoverColor = Utils.Color.White.Override(a: 0.1f),
-            clickColor = Utils.Color.White.Override(a: 0.25f),
+            normalColor = Color.Transparent,
+            hoverColor = Color.White.Override(alpha: 0.1f),
+            clickColor = Color.White.Override(alpha: 0.25f),
             hoverScaleMulti = Vec2.one * 1.25f,
             imageScale = 0.8f
         };
@@ -60,9 +62,9 @@ public class MediaWidget : WidgetBase
         }, alignment: UIAlignment.Center)
         {
             roundRadius = 25,
-            normalColor = Utils.Color.Transparent,
-            hoverColor = Utils.Color.White.Override(a: 0.1f),
-            clickColor = Utils.Color.White.Override(a: 0.25f),
+            normalColor = Color.Transparent,
+            hoverColor = Color.White.Override(alpha: 0.1f),
+            clickColor = Color.White.Override(alpha: 0.25f),
             hoverScaleMulti = Vec2.one * 1.25f,
             imageScale = 0.65f
         };
@@ -74,9 +76,9 @@ public class MediaWidget : WidgetBase
         }, alignment: UIAlignment.Center)
         {
             roundRadius = 25,
-            normalColor = Utils.Color.Transparent,
-            hoverColor = Utils.Color.White.Override(a: 0.1f),
-            clickColor = Utils.Color.White.Override(a: 0.25f),
+            normalColor = Color.Transparent,
+            hoverColor = Color.White.Override(alpha: 0.1f),
+            clickColor = Color.White.Override(alpha: 0.25f),
             hoverScaleMulti = Vec2.one * 1.25f,
             imageScale = 0.65f
         };
@@ -89,7 +91,7 @@ public class MediaWidget : WidgetBase
         AddLocalObject(audioVisualizer);
 
         audioVisualizerBig = new AudioVisualizer(this, new Vec2(0, 0), GetWidgetSize(), length: 16, alignment: UIAlignment.Center,
-            Primary: _spotifyColor.Override(a: 0.35f), Secondary: _spotifyColor.Override(a: 0.025f) * 0.1f)
+            Primary: _spotifyColor.Override(alpha: 0.35f), Secondary: _spotifyColor.Override(alpha: 0.025f) * 0.1f)
         {
             divisor = 2f
         };
@@ -162,18 +164,18 @@ public class MediaWidget : WidgetBase
         }
         cycle++;
 
-        prev.normalColor = Theme.IconColor * audioVisualizer.GetActionCol().Override(a: 0.2f);
-        next.normalColor = Theme.IconColor * audioVisualizer.GetActionCol().Override(a: 0.2f);
-        playPause.normalColor = Theme.IconColor * audioVisualizer.GetActionCol().Override(a: 0.2f);
+        prev.normalColor = Theme.IconColor * audioVisualizer.GetActionCol().Override(alpha: 0.2f);
+        next.normalColor = Theme.IconColor * audioVisualizer.GetActionCol().Override(alpha: 0.2f);
+        playPause.normalColor = Theme.IconColor * audioVisualizer.GetActionCol().Override(alpha: 0.2f);
 
         if(!isSpotifyAvaliable)
-            smoothedAmp = (float)Math.Max(Mathf.Lerp(smoothedAmp, audioVisualizer.AverageAmplitude, smoothing * deltaTime), audioVisualizer.AverageAmplitude);
+            smoothedAmp = (float)Math.Max(MathRendering.LinearInterpolation(smoothedAmp, audioVisualizer.AverageAmplitude, smoothing * deltaTime), audioVisualizer.AverageAmplitude);
         else
-            smoothedAmp = (float)Math.Max(Mathf.Lerp(smoothedAmp, audioVisualizer.AverageAmplitude, smoothing * deltaTime), audioVisualizer.AverageAmplitude);
+            smoothedAmp = (float)Math.Max(MathRendering.LinearInterpolation(smoothedAmp, audioVisualizer.AverageAmplitude, smoothing * deltaTime), audioVisualizer.AverageAmplitude);
 
         if (smoothedAmp < 0.005f) smoothedAmp = 0f;
 
-        spotifyBlur = Mathf.Lerp(spotifyBlur, isSpotifyAvaliable ? 0f : 25f, 10f * deltaTime);
+        spotifyBlur = MathRendering.LinearInterpolation(spotifyBlur, isSpotifyAvaliable ? 0f : 25f, 10f * deltaTime);
 
         noMediaPlaying.SetActive(smoothedAmp.Equals(0f) && !isSpotifyAvaliable);
         title.SetActive(isSpotifyAvaliable);
@@ -191,7 +193,7 @@ public class MediaWidget : WidgetBase
 
     float spotifyBlur = 0f;
     bool isSpotifyAvaliable = false;
-    Color _spotifyColor = Utils.Color.FromHex("#1cb351");
+    Color _spotifyColor = Color.FromHex("#1cb351");
 
     protected override void DrawWidget(SKCanvas canvas)
     {
@@ -211,7 +213,7 @@ public class MediaWidget : WidgetBase
 
         if (isSpotifyAvaliable || spotifyBlur <= 24f)
         {
-            paint.Color = _spotifyColor.Override(a: Color.a * (1f - (spotifyBlur / 25f))).Value();
+            paint.Color = _spotifyColor.Override(alpha: Color.Alpha * (1f - (spotifyBlur / 25f))).Value();
 
             var blur = SKImageFilter.CreateBlur((float)Math.Max(GetBlur(), spotifyBlur) + 0.1f, (float)Math.Max(GetBlur(), spotifyBlur) + 0.1f);
             paint.ImageFilter = blur;
@@ -232,7 +234,7 @@ public class MediaWidget : WidgetBase
                 // Do nothing and don't draw
             }
 
-            paint.Color = GetColor(_spotifyColor.Override(a: 0.25f * Color.a)).Value();
+            paint.Color = GetColor(_spotifyColor.Override(alpha: 0.25f * Color.Alpha)).Value();
             paint.StrokeWidth = 2f;
 
             float[] intervals = { 5, 10 };
@@ -249,7 +251,7 @@ public class MediaWidget : WidgetBase
             var shadowPaint = GetPaint();
 
             var drop = SKImageFilter.CreateDropShadowOnly(0, 0, (25f - spotifyBlur) / 2, (25f - spotifyBlur) / 2, 
-                _spotifyColor.Override(a: (25f - spotifyBlur) / 100f).Value());
+                _spotifyColor.Override(alpha: (25f - spotifyBlur) / 100f).Value());
             shadowPaint.ImageFilter = drop;
             shadowPaint.IsStroke = true;
             shadowPaint.StrokeWidth = 15;

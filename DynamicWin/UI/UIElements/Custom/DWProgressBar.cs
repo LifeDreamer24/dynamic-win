@@ -1,4 +1,5 @@
-﻿using DynamicWin.Utils;
+﻿using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 using SkiaSharp;
 
 namespace DynamicWin.UI.UIElements.Custom;
@@ -14,8 +15,8 @@ public class DWProgressBar : UIObject
     {
         roundRadius = 15f;
 
-        Color = Theme.IconColor.Override(a: 0.1f);
-        contentColor = Theme.IconColor.Override(a: 1f);
+        Color = Theme.IconColor.Override(alpha: 0.1f);
+        contentColor = Theme.IconColor.Override(alpha: 1f);
 
         displayValue = value;
     }
@@ -26,7 +27,7 @@ public class DWProgressBar : UIObject
     {
         base.Update(deltaTime);
 
-        displayValue = Mathf.Lerp(displayValue, value, vaueSmoothing * deltaTime);
+        displayValue = MathRendering.LinearInterpolation(displayValue, value, vaueSmoothing * deltaTime);
     }
 
     public override void Draw(SKCanvas canvas)

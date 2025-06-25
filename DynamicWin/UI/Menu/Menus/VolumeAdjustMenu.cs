@@ -1,10 +1,9 @@
-﻿using DynamicWin.Main;
-using DynamicWin.Resources;
-using DynamicWin.UI.UIElements;
+﻿using DynamicWin.UI.UIElements;
 using DynamicWin.UI.UIElements.Custom;
-using DynamicWin.Utils;
-using System.Runtime.InteropServices;
 using DynamicWin.Interop;
+using DynamicWin.Rendering;
+using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin.UI.Menu.Menus;
 
@@ -79,7 +78,7 @@ internal class VolumeAdjustMenu : BaseMenu
 
         if (timerUntilClose > 2.75f) MenuManager.CloseOverlay();
 
-        islandScale = Mathf.Lerp(islandScale, 1f, 5f * RendererMain.Instance.DeltaTime);
+        islandScale = MathRendering.LinearInterpolation(islandScale, 1f, 5f * DynamicWinRenderer.Instance.DeltaTime);
 
         var volume = GetVolumePercent();
         var isMuted = IsMuted();
@@ -93,8 +92,8 @@ internal class VolumeAdjustMenu : BaseMenu
             }
 
             volumeImage.Image = Resources.FileResources.VolumeOff;
-            RendererMain.Instance.MainIsland.LocalPosition.X = Mathf.Lerp(RendererMain.Instance.MainIsland.LocalPosition.X,
-                0, 10f * RendererMain.Instance.DeltaTime);
+            DynamicWinRenderer.Instance.MainIsland.LocalPosition.X = MathRendering.LinearInterpolation(DynamicWinRenderer.Instance.MainIsland.LocalPosition.X,
+                0, 10f * DynamicWinRenderer.Instance.DeltaTime);
 
             muteText.SetActive(true);
             mutedBg.SetActive(true);
@@ -113,8 +112,8 @@ internal class VolumeAdjustMenu : BaseMenu
 
             this.volume.value = 0f;
 
-            RendererMain.Instance.MainIsland.LocalPosition.X = Mathf.Lerp(RendererMain.Instance.MainIsland.LocalPosition.X,
-                (float)Math.Sin(timer) * shakeStrength, 10f * RendererMain.Instance.DeltaTime);
+            DynamicWinRenderer.Instance.MainIsland.LocalPosition.X = MathRendering.LinearInterpolation(DynamicWinRenderer.Instance.MainIsland.LocalPosition.X,
+                (float)Math.Sin(timer) * shakeStrength, 10f * DynamicWinRenderer.Instance.DeltaTime);
 
             volumeImage.Image = Resources.FileResources.VolumeOn;
 
@@ -123,20 +122,20 @@ internal class VolumeAdjustMenu : BaseMenu
             this.volume.SetActive(true);
         }
 
-        timer += RendererMain.Instance.DeltaTime * shakeSpeed;
-        seconds += RendererMain.Instance.DeltaTime;
+        timer += DynamicWinRenderer.Instance.DeltaTime * shakeSpeed;
+        seconds += DynamicWinRenderer.Instance.DeltaTime;
 
-        shakeStrength = Mathf.Clamp(Func(Mathf.Clamp(seconds * 1.5f, 0, 1)), 0, 1f) * 45;
+        shakeStrength = MathRendering.Clamp(Func(MathRendering.Clamp(seconds * 1.5f, 0, 1)), 0, 1f) * 45;
 
-        timerUntilClose += RendererMain.Instance.DeltaTime;
+        timerUntilClose += DynamicWinRenderer.Instance.DeltaTime;
 
         this.volume.value = (float)volume / 100f;
 
-        var volXOffset = KeyboardListener.keyDown.Contains(System.Windows.Forms.Keys.VolumeUp) ? 2f :
-            KeyboardListener.keyDown.Contains(System.Windows.Forms.Keys.VolumeDown) ? -2f : 0;
+        var volXOffset = KeyboardListener.KeyDown.Contains(System.Windows.Forms.Keys.VolumeUp) ? 2f :
+            KeyboardListener.KeyDown.Contains(System.Windows.Forms.Keys.VolumeDown) ? -2f : 0;
 
-        this.volume.LocalPosition.X = Mathf.Lerp(this.volume.LocalPosition.X, volXOffset, 
-            (Math.Abs(volXOffset) > Math.Abs(this.volume.LocalPosition.X) ? 4.5f : 2.5f) * RendererMain.Instance.DeltaTime);
+        this.volume.LocalPosition.X = MathRendering.LinearInterpolation(this.volume.LocalPosition.X, volXOffset, 
+            (Math.Abs(volXOffset) > Math.Abs(this.volume.LocalPosition.X) ? 4.5f : 2.5f) * DynamicWinRenderer.Instance.DeltaTime);
     }
 
     public override Vec2 IslandSize()

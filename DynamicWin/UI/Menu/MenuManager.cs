@@ -1,5 +1,5 @@
-﻿using DynamicWin.Main;
-using DynamicWin.Utils;
+﻿using DynamicWin.Rendering;
+using DynamicWin.Rendering.Primitives;
 
 namespace DynamicWin.UI.Menu;
 
@@ -47,7 +47,7 @@ public class MenuManager
         overlayThread.Interrupt();
     }
 
-    private void OpenOverlay(BaseMenu newActiveMenu, float time)
+    public void OpenOverlay(BaseMenu newActiveMenu, float time)
     {
         overlayThread = new Thread(() =>
         {
@@ -93,23 +93,23 @@ public class MenuManager
 
         menuAnimatorOut = new Animator(300, 1);
 
-        RendererMain.Instance.blurOverride = 35f;
+        DynamicWinRenderer.Instance.BlurOverride = 35f;
 
         if (activeMenu != null) activeMenu.OnDeload();
         activeMenu = newActiveMenu;
-
-        menuAnimatorOut.onAnimationUpdate += (t) =>
+        
+        menuAnimatorOut.onAnimationUpdate += t => 
         {
             float easedTime = Easings.EaseOutCubic(t);
             float easedTime2 = Easings.EaseOutQuint(t);
-            float blurSize = Mathf.Lerp(35f, 0f, easedTime);
-            float alpha = Mathf.Lerp(0f, 1f, easedTime2);
+            float blurSize = MathRendering.LinearInterpolation(35f, 0f, easedTime);
+            float alpha = MathRendering.LinearInterpolation(0f, 1f, easedTime2);
 
             var canvasSize = Vec2.lerp(Vec2.one * 0.7f, Vec2.one, easedTime2);
 
-            RendererMain.Instance.blurOverride = blurSize;
-            RendererMain.Instance.alphaOverride = alpha;
-            RendererMain.Instance.scaleOffset = canvasSize;
+            DynamicWinRenderer.Instance.BlurOverride = blurSize;
+            DynamicWinRenderer.Instance.AlphaOverride = alpha;
+            DynamicWinRenderer.Instance.ScaleOffset = canvasSize;
         };
 
         menuAnimatorOut.onAnimationEnd += () =>
@@ -138,9 +138,9 @@ public class MenuManager
             menuLoadQueue.Remove(queueObj);
         }
 
-        RendererMain.Instance.blurOverride = 0f;
-        RendererMain.Instance.alphaOverride = 1f;
-        RendererMain.Instance.scaleOffset = Vec2.one;
+        DynamicWinRenderer.Instance.BlurOverride = 0f;
+        DynamicWinRenderer.Instance.AlphaOverride = 1f;
+        DynamicWinRenderer.Instance.ScaleOffset = Vec2.one;
 
         menuAnimatorOut = null;
     }

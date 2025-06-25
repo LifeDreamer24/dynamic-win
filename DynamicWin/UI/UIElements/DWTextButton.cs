@@ -1,4 +1,4 @@
-﻿using DynamicWin.Utils;
+﻿using DynamicWin.Rendering.Primitives;
 
 namespace DynamicWin.UI.UIElements;
 
@@ -34,6 +34,6 @@ public class DWTextButton : DWButton
         else
             currentTextSize *= normalScaleMulti.Magnitude;
 
-        Text.TextSize = Mathf.Lerp(Text.TextSize, currentTextSize, textSizeSmoothSpeed * deltaTime);
+        Text.TextSize = MathRendering.LinearInterpolation(Text.TextSize, currentTextSize, textSizeSmoothSpeed * deltaTime);
     }
 }

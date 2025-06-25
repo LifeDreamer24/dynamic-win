@@ -1,5 +1,7 @@
-﻿using DynamicWin.UI.UIElements;
-using DynamicWin.Utils;
+﻿using DynamicWin.Interop;
+using DynamicWin.Rendering.Primitives;
+using DynamicWin.UI.UIElements;
+using DynamicWin.UserSettings;
 using LibreHardwareMonitor.Hardware;
 
 namespace DynamicWin.UI.Widgets.Small;

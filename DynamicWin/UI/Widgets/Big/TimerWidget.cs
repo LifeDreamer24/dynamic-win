@@ -1,9 +1,9 @@
-﻿
-using DynamicWin.Main;
+﻿using DynamicWin.Rendering;
+using DynamicWin.Rendering.Primitives;
 using DynamicWin.UI.Menu;
 using DynamicWin.UI.Menu.Menus;
 using DynamicWin.UI.UIElements;
-using DynamicWin.Utils;
+using DynamicWin.UserSettings;
 using SkiaSharp;
 
 namespace DynamicWin.UI.Widgets.Big;
@@ -122,12 +122,12 @@ public class TimerWidget : WidgetBase
         };
         AddLocalObject(secondLess);
 
-        hourMore.Image.Color = Theme.IconColor.Override(a: 0.45f);
-        hourLess.Image.Color = Theme.IconColor.Override(a: 0.45f);
-        minuteMore.Image.Color = Theme.IconColor.Override(a: 0.45f);
-        minuteLess.Image.Color = Theme.IconColor.Override(a: 0.45f);
-        secondMore.Image.Color = Theme.IconColor.Override(a: 0.45f);
-        secondLess.Image.Color = Theme.IconColor.Override(a: 0.45f);
+        hourMore.Image.Color = Theme.IconColor.Override(alpha: 0.45f);
+        hourLess.Image.Color = Theme.IconColor.Override(alpha: 0.45f);
+        minuteMore.Image.Color = Theme.IconColor.Override(alpha: 0.45f);
+        minuteLess.Image.Color = Theme.IconColor.Override(alpha: 0.45f);
+        secondMore.Image.Color = Theme.IconColor.Override(alpha: 0.45f);
+        secondLess.Image.Color = Theme.IconColor.Override(alpha: 0.45f);
 
         if (instance == null)
         {
@@ -145,7 +145,7 @@ public class TimerWidget : WidgetBase
     {
         initialSecondsSet += seconds + minutes * 60 + (hours * 60) * 60;
             
-        initialSecondsSet = (int)Mathf.Clamp(initialSecondsSet, 0, int.MaxValue);
+        initialSecondsSet = (int)MathRendering.Clamp(initialSecondsSet, 0, int.MaxValue);
             
         TimeSpan t = TimeSpan.FromSeconds(initialSecondsSet);
         string answer = string.Format("{0:D2}:{1:D2}:{2:D2}",
@@ -170,7 +170,7 @@ public class TimerWidget : WidgetBase
     void TimerEnd()
     {
         StopTimer();
-        RendererMain.Instance.MainIsland.hidden = false;
+        DynamicWinRenderer.Instance.MainIsland.Hidden = false;
 
         MenuManager.OpenOverlayMenu(new TimerOverMenu(), 15f);
     }
@@ -200,7 +200,7 @@ public class TimerWidget : WidgetBase
     {
         base.Update(deltaTime);
 
-        timerText.TextSize = Mathf.Lerp(timerText.TextSize, isTimerRunning ? 29 : 25, 10f * deltaTime);
+        timerText.TextSize = MathRendering.LinearInterpolation(timerText.TextSize, isTimerRunning ? 29 : 25, 10f * deltaTime);
 
         var tOff = -5f;
         var mul = 0.365f;

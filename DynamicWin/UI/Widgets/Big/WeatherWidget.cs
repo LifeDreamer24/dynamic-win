@@ -1,12 +1,12 @@
-﻿using DynamicWin.Resources;
-using DynamicWin.UI.Menu.Menus;
+﻿using DynamicWin.UI.Menu.Menus;
 using DynamicWin.UI.UIElements;
-using DynamicWin.Utils;
 using Newtonsoft.Json;
 using SkiaSharp;
 using System.Net.Http;
 using System.Windows.Controls;
 using System.Xml;
+using DynamicWin.Rendering.Primitives;
+using DynamicWin.UserSettings;
 
 namespace DynamicWin.UI.Widgets.Big;
 

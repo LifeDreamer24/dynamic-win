@@ -1,7 +1,6 @@
-﻿using DynamicWin.Main;
+﻿using DynamicWin.Rendering.Primitives;
 using DynamicWin.UI.Menu;
-using DynamicWin.Utils;
-using FftSharp;
+using DynamicWin.UserSettings;
 using SkiaSharp;
 
 namespace DynamicWin.UI.UIElements;
@@ -11,12 +10,12 @@ public class IslandObject : UIObject
     private readonly float[] _secondOrderValuesExpand = [2.5f, 0.6f, 0.1f];
     private readonly float[] _secondOrderValuesContract = [3f, 0.9f, 0.1f];
     
-    private float topOffset { get; set; } = 15f;
+    private float topOffset { get; set; } = 7.5f;
 
     public SecondOrder scaleSecondOrder { get; }
     
 
-    public bool hidden { get; set; } = false;
+    public bool Hidden { get; set; } = false;
         
     public Vec2 currSize;
 
@@ -26,8 +25,10 @@ public class IslandObject : UIObject
     float dropShadowStrength = 0f;
     float dropShadowSize = 0f;
 
-    Color _borderColor = Utils.Color.Transparent;
-
+    Color _borderColor = Color.Transparent;
+    
+    public event EventHandler? NeedsRendering;
+    
     public IslandObject() : base(null, Vec2.zero, new Vec2(250, 50))
     {
         currSize = Size;
@@ -65,9 +66,9 @@ public class IslandObject : UIObject
 
     private void UIObject_IsRendering(object? sender, IsRenderingEventArgs e)
     {
-        if (!hidden)
+        if (!Hidden)
         {
-            var newPosY =  Mathf.Lerp(LocalPosition.Y, topOffset, 15f * e.DeltaTime);
+            var newPosY =  MathRendering.LinearInterpolation(LocalPosition.Y, topOffset, 15f * e.DeltaTime);
             Size = scaleSecondOrder.Update(e.DeltaTime, currSize);
             
             MainForm.Instance.Opacity = 1f;
@@ -77,11 +78,10 @@ public class IslandObject : UIObject
             }
             
             PaddingTop = newPosY;
-            
         }
         else
         {
-            var newPosY = Mathf.Lerp(LocalPosition.Y, -Size.Y / 1.5f, 25f * e.DeltaTime);
+            var newPosY = MathRendering.LinearInterpolation(LocalPosition.Y, -Size.Y / 1.5f, 25f * e.DeltaTime);
             
             scaleSecondOrder.SetValues(_secondOrderValuesContract[0], _secondOrderValuesContract[1], _secondOrderValuesContract[2]);
             Size = scaleSecondOrder.Update(e.DeltaTime, new Vec2(500, 15));
@@ -94,15 +94,16 @@ public class IslandObject : UIObject
             
             PaddingTop = newPosY;
         }
-
+        
+        NeedsRendering?.Invoke(this, EventArgs.Empty);
         mode = Settings.IslandMode;
 
-        topOffset = Mathf.Lerp(topOffset, (mode == IslandMode.Island) ? 7.5f : -2.5f, 15f * e.DeltaTime);
+        topOffset = MathRendering.LinearInterpolation(topOffset, (mode == IslandMode.Island) ? 7.5f : -2.5f, 15f * e.DeltaTime);
 
-        dropShadowStrength = Mathf.Lerp(dropShadowStrength, IsHovering ? 0.75f : 0.25f, 10f * e.DeltaTime);
-        dropShadowSize = Mathf.Lerp(dropShadowSize, IsHovering ? 35f : 7.5f, 10f * e.DeltaTime);
+        dropShadowStrength = MathRendering.LinearInterpolation(dropShadowStrength, IsHovering ? 0.75f : 0.25f, 10f * e.DeltaTime);
+        dropShadowSize = MathRendering.LinearInterpolation(dropShadowSize, IsHovering ? 35f : 7.5f, 10f * e.DeltaTime);
 
-        _borderColor = Utils.Color.Lerp(_borderColor, MenuManager.Instance.ActiveMenu.IslandBorderColor(), 10f  * e.DeltaTime);
+        _borderColor = Color.LinearInterpolation(_borderColor, MenuManager.Instance.ActiveMenu.IslandBorderColor(), 10f  * e.DeltaTime);
     }
 
     private static void Show(float deltaTime)
@@ -117,16 +118,16 @@ public class IslandObject : UIObject
 
         paint.Color = Theme.IslandBackground.Value();
 
-        if (!hidden)
+        if (!Hidden)
         {
-            paint.ImageFilter = SKImageFilter.CreateDropShadow(1, 1, dropShadowSize, dropShadowSize, new Color(0, 0, 0).Override(a: dropShadowStrength).Value());
+            paint.ImageFilter = SKImageFilter.CreateDropShadow(1, 1, dropShadowSize, dropShadowSize, new Color(0, 0, 0).Override(alpha: dropShadowStrength).Value());
         }
 
         // Border
         var rect = GetRect();
         var paint2 = GetPaint();
         rect.Inflate(2.5f / 2, 2.5f / 2);
-        paint2.Color = _borderColor.Override(a: _borderColor.a * 0.35f).Value();
+        paint2.Color = _borderColor.Override(alpha: _borderColor.Alpha * 0.35f).Value();
         paint2.IsStroke = true;
         paint2.StrokeWidth = 2.5f;
 
@@ -134,7 +135,7 @@ public class IslandObject : UIObject
 
         paint.ImageFilter = null;
 
-        if (mode == IslandMode.Notch && !hidden)
+        if (mode == IslandMode.Notch && !Hidden)
         {
             var path = new SKPath();
 
@@ -194,5 +195,18 @@ public class IslandObject : UIObject
     {
         var rect = base.GetRect();
         return rect;
+    }
+    
+    public void Mask(SKCanvas canvas)
+    {
+        var islandMask = GetMask();
+        canvas.ClipRoundRect(islandMask);
+    }
+
+    private SKRoundRect GetMask()
+    {
+        var islandMask = GetRect();
+        islandMask.Deflate(new SKSize(1, 1));
+        return islandMask;
     }
 }

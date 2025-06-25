@@ -1,4 +1,4 @@
-﻿using DynamicWin.Utils;
+﻿using DynamicWin.Rendering.Primitives;
 using SkiaSharp;
 
 namespace DynamicWin.UI.UIElements;
@@ -49,6 +49,6 @@ public class DWTextImageButton : DWButton
         else
             currentTextSize *= normalScaleMulti.Magnitude;
 
-        Text.TextSize = Mathf.Lerp(Text.TextSize, currentTextSize, textSizeSmoothSpeed * deltaTime);
+        Text.TextSize = MathRendering.LinearInterpolation(Text.TextSize, currentTextSize, textSizeSmoothSpeed * deltaTime);
     }
 }
