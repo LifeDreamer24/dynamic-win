@@ -94,7 +94,9 @@ public class AudioVisualizer : UIObject
 
         for (int i = 0; i < fftValues.Length; i++)
         {
-            float amplitude = 0.8f + (float)(0.2f * Math.Sin(Environment.TickCount / 100.0 + i));
+            float amplitude = (float)Math.Sqrt(Math.Abs(fftValues[i]));
+            amplitude *= 7.5f;
+            amplitude = Math.Clamp(amplitude, 0, 1);
 
             if (float.IsNaN(amplitude) || float.IsInfinity(amplitude)) amplitude = 0f;
 
