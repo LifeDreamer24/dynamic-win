@@ -40,6 +40,7 @@ internal class HardwareMonitor
         if (_isBusy)
         {
             // Skip this time.
+        Console.WriteLine("Polling hardware...");
             Debug.WriteLine($"HardwareMonitor SKIPPED when called again during #{_iPrevCall}");
             return;
         }
