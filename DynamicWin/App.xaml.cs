@@ -28,6 +28,7 @@ public class App(
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        _ = new HardwareMonitor();
         
         var anotherInstanceRunning = CheckIfAnotherInstanceIsRunning();
         if (anotherInstanceRunning)

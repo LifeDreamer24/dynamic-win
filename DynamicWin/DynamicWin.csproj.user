@@ -3,17 +3,6 @@
   <PropertyGroup>
     <_LastSelectedProfileId>C:\Users\fb859\Documents\GitHub\DynamicWindows\DynamicWin\Properties\PublishProfiles\FolderProfile.pubxml</_LastSelectedProfileId>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Update="Main\MainForm.xaml.cs">
-      <SubType>Code</SubType>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <Page Update="Main\MainForm.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="Main\MainWindow.xaml">
-      <SubType>Designer</SubType>
-    </Page>
-  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup />
 </Project>

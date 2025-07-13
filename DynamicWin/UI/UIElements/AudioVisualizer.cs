@@ -8,6 +8,8 @@ namespace DynamicWin.UI.UIElements;
 
 public class AudioVisualizer : UIObject
 {
+    private float volumeBoost = 3.5f;
+    private float runningAvg = 0f;
     private int fftLength;
     private float[] fftValues;
     private WasapiLoopbackCapture capture;
@@ -95,7 +97,14 @@ public class AudioVisualizer : UIObject
         for (int i = 0; i < fftValues.Length; i++)
         {
             float amplitude = (float)Math.Sqrt(Math.Abs(fftValues[i]));
-            amplitude *= 7.5f;
+            // Auto-adjust sensitivity based on recent amplitude trends
+            runningAvg = 0.9f * runningAvg + 0.1f * amplitude;
+            float targetLevel = 0.2f;
+            if (runningAvg < targetLevel && volumeBoost < 7.5f)
+                volumeBoost += 0.05f;
+            else if (runningAvg > targetLevel && volumeBoost > 1f)
+                volumeBoost -= 0.05f;
+            amplitude *= volumeBoost;
             amplitude = Math.Clamp(amplitude, 0, 1);
 
             if (float.IsNaN(amplitude) || float.IsInfinity(amplitude)) amplitude = 0f;
@@ -245,7 +254,9 @@ public class AudioVisualizer : UIObject
 
             for (int i = 0; i < barHeight.Length / divisor; i++)
             {
-                averageAmplitude += MathRendering.Clamp(barHeight[i] * ((barHeight.Length - i) / barHeight.Length * 2 + 1f) * (Random.Shared.NextSingle() + 0.1f), 0, 1) * 4.5f;
+                averageAmplitude += MathRendering.Clamp(
+                    barHeight[i] * ((barHeight.Length - i) / barHeight.Length * 2 + 1f) *
+                    (Random.Shared.NextSingle() + 0.1f), 0, 1) * 3.75f;
             }
 
             if (!avAmpsMode)

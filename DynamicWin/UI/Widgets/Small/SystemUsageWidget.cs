@@ -26,7 +26,7 @@ public class SystemUsageWidget : SmallWidgetBase
 
     public SystemUsageWidget(UIObject? parent, Vec2 position, UIAlignment alignment = UIAlignment.TopCenter) : base(parent, position, alignment)
     {
-        text = new DWText(this, GetUsage(), Vec2.zero, UIAlignment.Center);
+        text = new DWText(this, "...", Vec2.zero, UIAlignment.Center);
         text.TextSize = 12;
         text.Color = Theme.TextSecond;
         AddLocalObject(text);
@@ -38,9 +38,12 @@ public class SystemUsageWidget : SmallWidgetBase
 
         updateCycle += deltaTime;
 
-        if(updateCycle > 1.5f)
+        if (updateCycle > 1.5f)
         {
-            text.SilentSetText(GetUsage());
+            string usage = GetUsage();
+            if (string.IsNullOrWhiteSpace(usage))
+                usage = "Polling hardware...";
+            text.SilentSetText(usage);
             updateCycle = 0f;
         }
     }
@@ -54,6 +57,13 @@ public class SystemUsageWidget : SmallWidgetBase
 
     protected override float GetWidgetWidth()
     {
-        return Math.Max(225f, text != null ? text.TextBounds.X : 10 - 10);
+        try
+        {
+            return Math.Max(225f, text?.TextBounds.X ?? 10f);
+        }
+        catch
+        {
+            return 225f;
+        }
     }
 }
